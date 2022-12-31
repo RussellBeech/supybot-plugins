@@ -1,54 +1,54 @@
 PlayBot Commands List
 
-BlackBuy Spend Mode Off			- setoption blackbuy false  
-BlackBuy Spend Mode On      - setoption blackbuy true  
-BlackBuy 14 Spend Mode Off  - setoption blackbuy14 false  
-BlackBuy 14 Spend Mode On   - setoption blackbuy14 true  
-Buy Life Mode Off           - setoption buylife false  
-Buy Life Mode On            - setoption buylife true  
-Buy Luck Potion Mode Off    - setoption buyluck false  
-Buy Luck Potion Mode On     - setoption buyluck true  
-Buy Power Potion Mode Off   - setoption buypower false  
-Buy Power Potion Mode On    - setoption buypower true  
-CreepAttack Mode Off        - setoption creepattack false  
-CreepAttack Mode On         - setoption creepattack true  
-Erase Config File           - eraseconfig  
-Erase PlayerList            - mgmultimultierase  
-Experince Buying Mode Off   - setoption expbuy false  
-Experince Buying Mode On    - setoption expbuy true  
-Fighting Mode Off           - setoption fights false  
-Fighting Mode On            - setoption fights true  
-Fix Looper                  - fixlooper  
-GetGems Mode Off            - setoption getgems false  
-GetGems Mode On             - setoption getgems true  
-Interval Text Mode Off      - setoption intervaltext false  
-Interval Text Mode On       - setoption intervaltext true  
-Log In Char                 - login charname password  
-Log Out Char                - logoutchar  
-Log Out Game                - logoutgame          - (Single Only)  
-Log Out Game                - logoutgame charnum  - (Multi or MultiMulti Only)  
-Manual Command Char1        - cmd command  
-Manual Command Char2        - cmd2 command        - (Multi or MultiMulti Only)  
-Manual Command Char3        - cmd3 command        - (Multi or MultiMulti Only)  
-Manual Command Char4        - cmd4 command        - (Multi or MultiMulti Only)  
-PlayBot Commands List       - help  
-Player's Items              - items  
-Player's Status             - status  
-Players List                - mgplayerslist  
-Set Creep Target            - setoption creep creepname  
-Set Goldsave                - setoption goldsave number  
-Set Item Buy Level          - setoption itembuy number  
-Set Option                  - setoption command value  
-Set Scrolls Buy ItemScore   - setoption scrollssum number  
-Set SlaySum Min ItemScore   - setoption slaysum number  
-Set XPSpend for upgrades    - setoption xpspend number  
-Settings List               - settings  
-Town/Forest Switch Mode     - setoption townforest true  
-Town/Work Switch Mode       - setoption townwork true  
-Update Nick                 - updatenick            - (Single Only)  
-Update Nick                 - updatenick charnum    - (Multi or MultiMulti Only)  
-Version Checker             - versioncheck  
-XPUpgrade Mode Off          - setoption xpupgrade false  
-XPUpgrade Mode On           - setoption xpupgrade true  
+BlackBuy Spend Mode Off		- setoption blackbuy false  
+BlackBuy Spend Mode On      	- setoption blackbuy true  
+BlackBuy 14 Spend Mode Off  	- setoption blackbuy14 false  
+BlackBuy 14 Spend Mode On   	- setoption blackbuy14 true  
+Buy Life Mode Off           	- setoption buylife false  
+Buy Life Mode On            	- setoption buylife true  
+Buy Luck Potion Mode Off    	- setoption buyluck false  
+Buy Luck Potion Mode On     	- setoption buyluck true  
+Buy Power Potion Mode Off   	- setoption buypower false  
+Buy Power Potion Mode On    	- setoption buypower true  
+CreepAttack Mode Off        	- setoption creepattack false  
+CreepAttack Mode On         	- setoption creepattack true  
+Erase Config File           	- eraseconfig  
+Erase PlayerList            	- mgmultimultierase  
+Experince Buying Mode Off   	- setoption expbuy false  
+Experince Buying Mode On    	- setoption expbuy true  
+Fighting Mode Off           	- setoption fights false  
+Fighting Mode On            	- setoption fights true  
+Fix Looper                  	- fixlooper  
+GetGems Mode Off            	- setoption getgems false  
+GetGems Mode On             	- setoption getgems true  
+Interval Text Mode Off      	- setoption intervaltext false  
+Interval Text Mode On       	- setoption intervaltext true  
+Log In Char                 	- login charname password  
+Log Out Char                	- logoutchar  
+Log Out Game                	- logoutgame          - (Single Only)  
+Log Out Game                	- logoutgame charnum  - (Multi or MultiMulti Only)  
+Manual Command Char1        	- cmd command  
+Manual Command Char2        	- cmd2 command        - (Multi or MultiMulti Only)  
+Manual Command Char3        	- cmd3 command        - (Multi or MultiMulti Only)  
+Manual Command Char4        	- cmd4 command        - (Multi or MultiMulti Only)  
+PlayBot Commands List       	- help  
+Player's Items              	- items  
+Player's Status             	- status  
+Players List                	- mgplayerslist  
+Set Creep Target            	- setoption creep creepname  
+Set Goldsave                	- setoption goldsave number  
+Set Item Buy Level          	- setoption itembuy number  
+Set Option                  	- setoption command value  
+Set Scrolls Buy ItemScore   	- setoption scrollssum number  
+Set SlaySum Min ItemScore   	- setoption slaysum number  
+Set XPSpend for upgrades    	- setoption xpspend number  
+Settings List               	- settings  
+Town/Forest Switch Mode     	- setoption townforest true  
+Town/Work Switch Mode       	- setoption townwork true  
+Update Nick                 	- updatenick            - (Single Only)  
+Update Nick                 	- updatenick charnum    - (Multi or MultiMulti Only)  
+Version Checker             	- versioncheck  
+XPUpgrade Mode Off          	- setoption xpupgrade false  
+XPUpgrade Mode On           	- setoption xpupgrade true  
 
 If you want more information about a command use <bot> help <plugin name> <command> - ie /msg DudeRuss help multigameplaybotmultimulti settings
