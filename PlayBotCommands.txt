@@ -1,0 +1,56 @@
+PlayBot Commands List", private=True)
+
+Autostart Mode Off          - setoption autostart false
+Autostart Mode On           - setoption autostart true
+Best Bet/Fight/Creep/Slay   - bestall
+Bot Text Mode Off           - setoption bottext false
+Bot Text Mode On            - setoption bottext true
+Erase Config File           - eraseconfig
+Erase PlayerList            - psingleerase
+Erase PlayerList            - pmultierase
+Error Text Mode Off         - setoption errortext false
+Error Text Mode On          - setoption errortext true
+Evil Mode Off               - setoption evil false
+Evil Mode On                - setoption evil true
+Fix Looper                  - fixlooper
+GameBot Notices Mode Off    - setoption noticetext false
+GameBot Notices Mode On     - setoption noticetext true
+GameBot PMs Mode Off        - setoption pmtext false
+GameBot PMs Mode On         - setoption pmtext true
+Interval Text Mode Off      - setoption intervaltext false
+Interval Text Mode On       - setoption intervaltext true
+Item Upgrader Mode Off      - setoption itemupgrader false
+Item Upgrader Mode On       - setoption itemupgrader true
+Jump Network                - jump network 		- (Single Only)
+Jump Network                - jump network charnumber	- (Multi Only)
+Log In Char                 - login charname password
+Log Out Char                - logoutchar
+Log Out Game                - logoutgame		- (Single Only)
+Log Out Game                - logoutgame charnumber	- (Multi Only)
+Manual Command Char1        - cmd command
+Manual Command Char2        - cmd2 command		- (Multi Only)
+Manual Command Char3        - cmd3 command		- (Multi Only)
+Manual Command Char4        - cmd4 command		- (Multi Only)
+Manual Command Char5        - cmd5 command		- (Multi Only)
+Multiple Fight Mode         - setoption singlefight false
+PlayBot Commands List       - help
+Player's Items              - items
+Player's Status             - status
+Players List                - playerslist
+Rawplayers Mode On          - setoption rawplayers true
+Rawstats Mode On            - setoption rawstats true
+Set Align Level             - setoption alignlevel number
+Set BetMoney                - setoption betmoney number
+Set Engineer Buy Level      - setoption engineerbuy number
+Set Hero Buy ItemScore      - setoption herobuy number
+Set Item Buy Level          - setoption itembuy number
+Set Option                  - setoption command value
+Settings List               - settings
+Single Fight Mode           - setoption singlefight true
+Update Nick                 - updatenick		- (Single Only)
+Update Nick                 - updatenick charnumber	- (Multi Only)
+Upgrade All 1 Mode Off      - setoption upgradeall false
+Upgrade All 1 Mode On       - setoption upgradeall true
+Version Checker             - versioncheck
+
+If you want more information about a command use <supybot> help <plugin name> <command> - ie /msg DudeRuss help playbotmulti settings
