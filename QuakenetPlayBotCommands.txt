@@ -6,16 +6,11 @@ BlackBuy 14 Spend Mode Off  	- setoption blackbuy14 false
 BlackBuy 14 Spend Mode On   	- setoption blackbuy14 true  
 Buy Life Mode Off           	- setoption buylife false  
 Buy Life Mode On            	- setoption buylife true  
-Buy Luck Potion Mode Off    	- setoption buyluck false  
-Buy Luck Potion Mode On     	- setoption buyluck true  
-Buy Power Potion Mode Off   	- setoption buypower false  
-Buy Power Potion Mode On    	- setoption buypower true  
 CreepAttack Mode Off        	- setoption creepattack false  
 CreepAttack Mode On         	- setoption creepattack true  
 Erase Config File           	- eraseconfig  
-Erase PlayerList            	- mgmultisingleerase  
-Erase PlayerList            	- mgmultimultierase  
-Erase PlayerList            	- mgmultimultimultierase  
+Erase PlayerList            	- qmultisingleerase  
+Erase PlayerList            	- qmultimultierase  
 Experince Buying Mode Off   	- setoption expbuy false  
 Experince Buying Mode On    	- setoption expbuy true  
 Fighting Mode Off           	- setoption fights false  
@@ -28,15 +23,15 @@ Interval Text Mode On       	- setoption intervaltext true
 Log In Char                 	- login charname password  
 Log Out Char                	- logoutchar  
 Log Out Game                	- logoutgame          - (Single Only)  
-Log Out Game                	- logoutgame charnum  - (Multi or MultiMulti Only)  
+Log Out Game                	- logoutgame charnum  - (Multi Only)  
 Manual Command Char1        	- cmd command  
-Manual Command Char2        	- cmd2 command        - (Multi or MultiMulti Only)  
-Manual Command Char3        	- cmd3 command        - (Multi or MultiMulti Only)  
-Manual Command Char4        	- cmd4 command        - (Multi or MultiMulti Only)  
+Manual Command Char2        	- cmd2 command        - (Multi Only)  
+Manual Command Char3        	- cmd3 command        - (Multi Only)  
+Manual Command Char4        	- cmd4 command        - (Multi Only)  
 PlayBot Commands List       	- help  
 Player's Items              	- items  
 Player's Status             	- status  
-Players List                	- mgplayerslist  
+Players List                	- qplayerslist  
 Set Creep Target            	- setoption creep creepname  
 Set Goldsave                	- setoption goldsave number  
 Set Item Buy Level          	- setoption itembuy number  
@@ -48,9 +43,9 @@ Settings List               	- settings
 Town/Forest Switch Mode     	- setoption townforest true  
 Town/Work Switch Mode       	- setoption townwork true  
 Update Nick                 	- updatenick            - (Single Only)  
-Update Nick                 	- updatenick charnum    - (Multi or MultiMulti Only)  
+Update Nick                 	- updatenick charnum    - (Multi Only)  
 Version Checker             	- versioncheck  
 XPUpgrade Mode Off          	- setoption xpupgrade false  
 XPUpgrade Mode On           	- setoption xpupgrade true  
 
-If you want more information about a command use <bot> help <plugin name> <command> - ie /msg DudeRuss help multigameplaybotmultimulti settings
+If you want more information about a command use <bot> help <plugin name> <command> - ie /msg DudeRuss help quakenetplaybotmulti settings
