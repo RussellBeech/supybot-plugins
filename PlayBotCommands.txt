@@ -1,4 +1,4 @@
-PlayBot Commands List", private=True)
+PlayBot Commands List
 
 Autostart Mode Off          - setoption autostart false
 Autostart Mode On           - setoption autostart true
