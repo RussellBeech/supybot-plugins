@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2018-2022, Russell Beech
+# Copyright (c) 2018-2023, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Multirpg Playbot Script"
-__module_version__ = "2.8"
+__module_version__ = "2.9"
 __module_description__ = "Multirpg Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -147,6 +147,7 @@ monsters.reverse()
 multirpgweb = "https://www.multirpg.net/"
 idlerpgweb = "http://www.idlerpg.org/"
 russweb = "https://russellb.000webhostapp.com/"
+gitweb = "https://github.com/RussellBeech/supybot-plugins"
 rawplayers3 = None
 interval = 300
 newlist = None
@@ -357,6 +358,7 @@ class PlayBotSingle(callbacks.Plugin):
         global currentversion
         global python3
         global russweb
+        global gitweb
 
         webversion = None
         try:
@@ -378,7 +380,7 @@ class PlayBotSingle(callbacks.Plugin):
                     self.reply(irc, "You have the current version of PlayBot")
                 if(currentversion < webversion):
                     self.reply(irc, "You have an old version of PlayBot")
-                    self.reply(irc, "You can download a new version from {0}".format(russweb))
+                    self.reply(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
                 if(currentversion > webversion):
                     self.reply(irc, "Give me, Give me")
 
@@ -1658,7 +1660,6 @@ class PlayBotSingle(callbacks.Plugin):
             global evilmode
             global name
             global rawstatsmode
-            global gameactive
             global bottextmode
             global errortextmode
             global intervaltextmode
@@ -1667,23 +1668,20 @@ class PlayBotSingle(callbacks.Plugin):
             global autostartmode
             global netname
 
-            if gameactive is True:
-                irc.reply("Playbot Settings List", private=True)
-                irc.reply(" ", private=True)
-                irc.reply("Align Level - {0}          Autostart Mode - {1}".format(setalign, autostartmode), private=True)
-                irc.reply("Bet Money - {0}            Bot Text Mode - {1}".format(betmoney, bottextmode), private=True)
-                irc.reply("Engineer Buy Level - {0}   Error Text Mode - {1}".format(setengineer, errortextmode), private=True)
-                irc.reply("Evil Mode - {0}            GameBot Notices Mode - {1}".format(evilmode, noticetextmode), private=True)
-                irc.reply("GameBot PMs Mode - {0}     Hero Buy ItemScore - {1}".format(pmtextmode, sethero), private=True)
-                irc.reply("Interval Text Mode - {0}   Item Buy Level - {1}".format(intervaltextmode, setbuy), private=True)
-                irc.reply("Item Upgrader Mode - {0}   Player Character - {1}.  Network {2}".format(itemupgrader, name, netname), private=True)
-                if rawstatsmode is True:
-                        irc.reply("Rawstats Mode - True", private=True)
-                if rawstatsmode is False:
-                        irc.reply("Rawplayers Mode - True", private=True)
-                irc.reply("Single Fight Mode - {0}    Upgrade All 1 Mode - {1}".format(singlefight, upgradeall), private=True)
-            if gameactive is False:
-                irc.error("You are not logged in")
+            irc.reply("Playbot Settings List", private=True)
+            irc.reply(" ", private=True)
+            irc.reply("Align Level - {0}          Autostart Mode - {1}".format(setalign, autostartmode), private=True)
+            irc.reply("Bet Money - {0}            Bot Text Mode - {1}".format(betmoney, bottextmode), private=True)
+            irc.reply("Engineer Buy Level - {0}   Error Text Mode - {1}".format(setengineer, errortextmode), private=True)
+            irc.reply("Evil Mode - {0}            GameBot Notices Mode - {1}".format(evilmode, noticetextmode), private=True)
+            irc.reply("GameBot PMs Mode - {0}     Hero Buy ItemScore - {1}".format(pmtextmode, sethero), private=True)
+            irc.reply("Interval Text Mode - {0}   Item Buy Level - {1}".format(intervaltextmode, setbuy), private=True)
+            irc.reply("Item Upgrader Mode - {0}   Player Character - {1}.  Network {2}".format(itemupgrader, name, netname), private=True)
+            if rawstatsmode is True:
+                    irc.reply("Rawstats Mode - True", private=True)
+            if rawstatsmode is False:
+                    irc.reply("Rawplayers Mode - True", private=True)
+            irc.reply("Single Fight Mode - {0}    Upgrade All 1 Mode - {1}".format(singlefight, upgradeall), private=True)
 
     settings = wrap(settings, [("checkCapability", "admin")])
 
@@ -2972,15 +2970,15 @@ class PlayBotSingle(callbacks.Plugin):
         global playbottext
 
         if gameactive is True:
-            try:
+
+            if msg.command == "NOTICE":
+                try:
                     checknet = self._getIrcName(irc)
                     checknick = irc.nick
                     chanmsgnick = msg.nick
                     (channel, text) = msg.args
-            except ValueError:
+                except ValueError:
                     return
-
-            if msg.command == "NOTICE":
                 if(checknick == supynick and checknet == netname):
                         if(botname == chanmsgnick):
                                 if noticetextmode is True:
@@ -3083,15 +3081,14 @@ class PlayBotSingle(callbacks.Plugin):
                         ["You now have"],                ]
 
         if gameactive is True:
-            try:
-                checknick = irc.nick
-                checknet = self._getIrcName(irc)
-                chanmsgnick = msg.nick
-                (channel, text) = msg.args
-            except ValueError:
-                return
-
             if msg.command == 'PRIVMSG':
+                try:
+                        checknick = irc.nick
+                        checknet = self._getIrcName(irc)
+                        chanmsgnick = msg.nick
+                        (channel, text) = msg.args
+                except ValueError:
+                        return
                 if "IRC connection timed out" in text:
                         return
                 if "Disconnected from IRC" in text:
@@ -3252,7 +3249,6 @@ class PlayBotSingle(callbacks.Plugin):
         global otherIrc
         global nickserv
         global nickservpass
-        global nickname
         global supynick
         global networkreconnect
         global connectfail

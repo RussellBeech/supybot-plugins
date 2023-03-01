@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2018-2022, Russell Beech
+# Copyright (c) 2018-2023, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Multirpg Playbot Script"
-__module_version__ = "2.8"
+__module_version__ = "2.9"
 __module_description__ = "Multirpg Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -147,6 +147,7 @@ monsters.reverse()
 multirpgweb = "https://www.multirpg.net/"
 idlerpgweb = "http://www.idlerpg.org/"
 russweb = "https://russellb.000webhostapp.com/"
+gitweb = "https://github.com/RussellBeech/supybot-plugins"
 rawplayers3 = None
 interval = 300
 newlist = None
@@ -296,6 +297,7 @@ intervaltextmode = True # True = on, False = off
 remotekill = True # True = on, False = off # Gives me the option if the PlayBot is flooding the GameBot to disable the PlayBot
 autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 loginsettingslister = True # True = on, False = off - Settings List at start
+disableplayerslistcommand = False # True = on, False = off - You can disable the playerslist command if there are multiple of them when running both single and multi together
 
 # declare stats as global
 name = None
@@ -557,6 +559,7 @@ class PlayBotMulti(callbacks.Plugin):
         global currentversion
         global python3
         global russweb
+        global gitweb
 
         webversion = None
         try:
@@ -578,7 +581,7 @@ class PlayBotMulti(callbacks.Plugin):
                     self.replymulti(irc, "You have the current version of PlayBot")
                 if(currentversion < webversion):
                     self.replymulti(irc, "You have an old version of PlayBot")
-                    self.replymulti(irc, "You can download a new version from {0}".format(russweb))
+                    self.replymulti(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
                 if(currentversion > webversion):
                     self.replymulti(irc, "Give me, Give me")
 
@@ -2623,93 +2626,94 @@ class PlayBotMulti(callbacks.Plugin):
 
     logoutgame = wrap(logoutgame, [("checkCapability", "admin"), "positiveInt"])
 
-    def playerslist(self, irc, msg, args):
-        """takes no arguments
+    if disableplayerslistcommand is False:
+            def playerslist(self, irc, msg, args):
+                """takes no arguments
 
-        Lists players on all MultiRPG plugins loaded
-        """
+                Lists players on all MultiRPG plugins loaded
+                """
 
-        global playbotsingle
-        global playbotmulti
+                global playbotsingle
+                global playbotmulti
 
-        self.playbotcheck(irc)
+                self.playbotcheck(irc)
 
-        if playbotsingle is True:
-                psfileprefix3 = "playbotsingleplayers.txt"
-                path = conf.supybot.directories.data
-                psfilename3 = path.dirize(psfileprefix3)
-                pscheck = True
-                try:
-                        f = open(psfilename3,"rb")
-                        playerListS = pickle.load(f)
-                        f.close()
-                except:
-                        playerListS = []
-                try:
-                        psinglename = playerListS[0][1]
-                        psinglenetname = playerListS[0][3]
-                except IndexError:
-                        irc.reply("No Players Logged in on PlayBotSingle", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
-                        pscheck = False
-                if pscheck is True:
-                        irc.reply("MultiRPG PlayBot Single", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character - {0}.  Network {1}".format(psinglename, psinglenetname), private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
+                if playbotsingle is True:
+                        psfileprefix3 = "playbotsingleplayers.txt"
+                        path = conf.supybot.directories.data
+                        psfilename3 = path.dirize(psfileprefix3)
+                        pscheck = True
+                        try:
+                                f = open(psfilename3,"rb")
+                                playerListS = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListS = []
+                        try:
+                                psinglename = playerListS[0][1]
+                                psinglenetname = playerListS[0][3]
+                        except IndexError:
+                                irc.reply("No Players Logged in on PlayBotSingle", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
+                                pscheck = False
+                        if pscheck is True:
+                                irc.reply("MultiRPG PlayBot Single", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character - {0}.  Network {1}".format(psinglename, psinglenetname), private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
 
-        if playbotmulti is True:
-                pmfileprefix4 = "playbotmultiplayers.txt"
-                path = conf.supybot.directories.data
-                pmfilename4 = path.dirize(pmfileprefix4)
-                pmcheck = False
-                try:
-                        f = open(pmfilename4,"rb")
-                        playerListM = pickle.load(f)
-                        f.close()
-                except:
-                        playerListM = []
-                count = 0
-                pmultiname = None
-                pmultiname2 = None
-                pmultiname3 = None
-                pmultiname4 = None
-                pmultiname5 = None
-                pmultinetname = None
-                pmultinetname2 = None
-                pmultinetname3 = None
-                pmultinetname4 = None
-                pmultinetname5 = None
-                for entry in playerListM:
-                        count += 1
-                        if count == 1:
-                                pmultiname = entry[1]
-                                pmultinetname = entry[3]
-                                pmcheck = True
-                        if count == 2:
-                                pmultiname2 = entry[1]
-                                pmultinetname2 = entry[3]
-                        if count == 3:
-                                pmultiname3 = entry[1]
-                                pmultinetname3 = entry[3]
-                        if count == 4:
-                                pmultiname4 = entry[1]
-                                pmultinetname4 = entry[3]
-                        if count == 5:
-                                pmultiname5 = entry[1]
-                                pmultinetname5 = entry[3]
-                if pmcheck is False:
-                        irc.reply("No Players Logged in on PlayBotMulti", private=True)
-                if pmcheck is True:
-                        irc.reply("MultiRPG PlayBot Multi", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(pmultiname, pmultinetname, pmultiname2, pmultinetname2), private=True)
-                        irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(pmultiname3, pmultinetname3, pmultiname4, pmultinetname4), private=True)
-                        irc.reply("Player Character 5 - {0}.  Network {1}".format(pmultiname5, pmultinetname5), private=True)
+                if playbotmulti is True:
+                        pmfileprefix4 = "playbotmultiplayers.txt"
+                        path = conf.supybot.directories.data
+                        pmfilename4 = path.dirize(pmfileprefix4)
+                        pmcheck = False
+                        try:
+                                f = open(pmfilename4,"rb")
+                                playerListM = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListM = []
+                        count = 0
+                        pmultiname = None
+                        pmultiname2 = None
+                        pmultiname3 = None
+                        pmultiname4 = None
+                        pmultiname5 = None
+                        pmultinetname = None
+                        pmultinetname2 = None
+                        pmultinetname3 = None
+                        pmultinetname4 = None
+                        pmultinetname5 = None
+                        for entry in playerListM:
+                                count += 1
+                                if count == 1:
+                                        pmultiname = entry[1]
+                                        pmultinetname = entry[3]
+                                        pmcheck = True
+                                if count == 2:
+                                        pmultiname2 = entry[1]
+                                        pmultinetname2 = entry[3]
+                                if count == 3:
+                                        pmultiname3 = entry[1]
+                                        pmultinetname3 = entry[3]
+                                if count == 4:
+                                        pmultiname4 = entry[1]
+                                        pmultinetname4 = entry[3]
+                                if count == 5:
+                                        pmultiname5 = entry[1]
+                                        pmultinetname5 = entry[3]
+                        if pmcheck is False:
+                                irc.reply("No Players Logged in on PlayBotMulti", private=True)
+                        if pmcheck is True:
+                                irc.reply("MultiRPG PlayBot Multi", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(pmultiname, pmultinetname, pmultiname2, pmultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(pmultiname3, pmultinetname3, pmultiname4, pmultinetname4), private=True)
+                                irc.reply("Player Character 5 - {0}.  Network {1}".format(pmultiname5, pmultinetname5), private=True)
 
-    playerslist = wrap(playerslist, [("checkCapability", "admin")])
+            playerslist = wrap(playerslist, [("checkCapability", "admin")])
 
     def multiwrite(self, irc):
         global name
@@ -3489,7 +3493,6 @@ class PlayBotMulti(callbacks.Plugin):
         global name4
         global name5
         global rawstatsmode
-        global gameactive
         global bottextmode
         global errortextmode
         global intervaltextmode
@@ -3502,26 +3505,23 @@ class PlayBotMulti(callbacks.Plugin):
         global netname4
         global netname5
 
-        if gameactive is True:
-            irc.reply("Playbot Settings List", private=True)
-            irc.reply(" ", private=True)
-            irc.reply("Align Level - {0}          Autostart Mode - {1}".format(setalign, autostartmode), private=True)
-            irc.reply("Bet Money - {0}            Bot Text Mode - {1}".format(betmoney, bottextmode), private=True)
-            irc.reply("Engineer Buy Level - {0}   Error Text Mode - {1}".format(setengineer, errortextmode), private=True)
-            irc.reply("Evil Mode - {0}            GameBot Notices Mode - {1}".format(evilmode, noticetextmode), private=True)
-            irc.reply("GameBot PMs Mode - {0}     Hero Buy ItemScore - {1}".format(pmtextmode, sethero), private=True)
-            irc.reply("Interval Text Mode - {0}   Item Buy Level - {1}".format(intervaltextmode, setbuy), private=True)
-            irc.reply("Item Upgrader Mode - {0}".format(itemupgrader), private=True)
-            irc.reply("Player Character 1 - {0}, {1}.  Network {2}  Player Character 2 - {3}, {4}.  Network {5}".format(char1, name, netname, char2, name2, netname2), private=True)
-            irc.reply("Player Character 3 - {0}, {1}.  Network {2}  Player Character 4 - {3}, {4}.  Network {5}".format(char3, name3, netname3, char4, name4, netname4), private=True)
-            irc.reply("Player Character 5 - {0}, {1}.  Network {2}".format(char5, name5, netname5), private=True)
-            if rawstatsmode is True:
-                irc.reply("Rawstats Mode - True", private=True)
-            if rawstatsmode is False:
-                irc.reply("Rawplayers Mode - True", private=True)
-            irc.reply("Single Fight Mode - {0}    Upgrade All 1 Mode - {1}".format(singlefight, upgradeall), private=True)
-        if gameactive is False:
-            irc.error("You are not logged in")
+        irc.reply("Playbot Settings List", private=True)
+        irc.reply(" ", private=True)
+        irc.reply("Align Level - {0}          Autostart Mode - {1}".format(setalign, autostartmode), private=True)
+        irc.reply("Bet Money - {0}            Bot Text Mode - {1}".format(betmoney, bottextmode), private=True)
+        irc.reply("Engineer Buy Level - {0}   Error Text Mode - {1}".format(setengineer, errortextmode), private=True)
+        irc.reply("Evil Mode - {0}            GameBot Notices Mode - {1}".format(evilmode, noticetextmode), private=True)
+        irc.reply("GameBot PMs Mode - {0}     Hero Buy ItemScore - {1}".format(pmtextmode, sethero), private=True)
+        irc.reply("Interval Text Mode - {0}   Item Buy Level - {1}".format(intervaltextmode, setbuy), private=True)
+        irc.reply("Item Upgrader Mode - {0}".format(itemupgrader), private=True)
+        irc.reply("Player Character 1 - {0}, {1}.  Network {2}  Player Character 2 - {3}, {4}.  Network {5}".format(char1, name, netname, char2, name2, netname2), private=True)
+        irc.reply("Player Character 3 - {0}, {1}.  Network {2}  Player Character 4 - {3}, {4}.  Network {5}".format(char3, name3, netname3, char4, name4, netname4), private=True)
+        irc.reply("Player Character 5 - {0}, {1}.  Network {2}".format(char5, name5, netname5), private=True)
+        if rawstatsmode is True:
+            irc.reply("Rawstats Mode - True", private=True)
+        if rawstatsmode is False:
+            irc.reply("Rawplayers Mode - True", private=True)
+        irc.reply("Single Fight Mode - {0}    Upgrade All 1 Mode - {1}".format(singlefight, upgradeall), private=True)
 
     settings = wrap(settings, [("checkCapability", "admin")])
 
@@ -6462,15 +6462,15 @@ class PlayBotMulti(callbacks.Plugin):
         level5 = 0
         fights5 = 0
         if gameactive is True:
-            try:
-                checknick = irc.nick
-                checknet = self._getIrcName(irc)
-                chanmsgnick = msg.nick
-                (channel, text) = msg.args
-            except ValueError:
-                return
 
             if msg.command == 'PRIVMSG':
+                try:
+                        checknick = irc.nick
+                        checknet = self._getIrcName(irc)
+                        chanmsgnick = msg.nick
+                        (channel, text) = msg.args
+                except ValueError:
+                        return
                 if "IRC connection timed out" in text:
                         return
                 if "Disconnected from IRC" in text:
