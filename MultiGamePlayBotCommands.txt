@@ -4,6 +4,8 @@ BlackBuy Spend Mode Off		- setoption blackbuy false
 BlackBuy Spend Mode On      	- setoption blackbuy true  
 BlackBuy 14 Spend Mode Off  	- setoption blackbuy14 false  
 BlackBuy 14 Spend Mode On   	- setoption blackbuy14 true  
+Bot Text Mode Off               - setoption bottext false
+Bot Text Mode On                - setoption bottext true
 Buy Life Mode Off           	- setoption buylife false  
 Buy Life Mode On            	- setoption buylife true  
 Buy Luck Potion Mode Off    	- setoption buyluck false  
@@ -16,11 +18,15 @@ Erase Config File           	- eraseconfig
 Erase PlayerList            	- mgmultisingleerase  
 Erase PlayerList            	- mgmultimultierase  
 Erase PlayerList            	- mgmultimultimultierase  
+Error Text Mode Off             - setoption errortext false
+Error Text Mode On              - setoption errortext true
 Experince Buying Mode Off   	- setoption expbuy false  
 Experince Buying Mode On    	- setoption expbuy true  
 Fighting Mode Off           	- setoption fights false  
 Fighting Mode On            	- setoption fights true  
 Fix Looper                  	- fixlooper  
+GameBot PMs Mode Off            - setoption pmtext false
+GameBot PMs Mode On             - setoption pmtext true
 GetGems Mode Off            	- setoption getgems false  
 GetGems Mode On             	- setoption getgems true  
 Interval Text Mode Off      	- setoption intervaltext false  

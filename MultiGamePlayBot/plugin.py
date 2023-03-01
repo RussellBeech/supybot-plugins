@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2022, Russell Beech
+# Copyright (c) 2021-2023, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "MultiGame IdleRPG Playbot Script"
-__module_version__ = "1.4"
+__module_version__ = "1.5"
 __module_description__ = "MultiGame IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -126,7 +126,7 @@ creeps.reverse()
 monsters.reverse()
 
 #               Network                 Website                                 FightLL ChanName        BotName                         GameID
-gamelist = [    ["abandoned",           "http://irpg.abandoned-irc.net",        True,   "#zw-idlerpg",  "IdleRPG",                      1],  \
+gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       True,   "#zw-idlerpg",  "IdleRPG",                      1],  \
                 ["dalnet",              "https://tilde.green/~hellspawn",       True,   "#irpg",        "DAL-IRPG",                     2], \
                 ["efnet",               "http://idle.rpgsystems.org",           True,   "#idlerpg",     "IdleRPG",                      3], \
                 ["technet",             "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG/IRC-nERDs",            4],  \
@@ -134,6 +134,7 @@ gamelist = [    ["abandoned",           "http://irpg.abandoned-irc.net",        
                 ["twistednet",          "http://idlerpg.twistednet.org",        False,  "#idlerpg",     "IdleRPG",                      5]   ]
 
 russweb = "https://russellb.000webhostapp.com/"
+gitweb = "https://github.com/RussellBeech/supybot-plugins"
 playerview = None 
 interval = 300
 newlist = None
@@ -156,6 +157,9 @@ setcreeptarget = "Werewolf" # Sets creep target. creepattack needs to be False t
 scrollssum = 3000 # Itemscore you start buying scrolls at
 xpupgrade = True # Upgrade Items with XP
 xpspend = 20 # Amount you use with xpget to upgrade items
+bottextmode = True # True = on, False = off
+errortextmode = True # True = on, False = off
+pmtextmode = True # True = on, False = off
 intervaltext = True # True = on, False = off - Text displayed every interval
 townworkswitch = True # True = Town/Work Area Switching, False = Town/Forest Area Switching
 buyluck = False
@@ -164,6 +168,7 @@ expbuy = False
 autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 slaysum = 1000 # minimum sum you start slaying without mana from
 loginsettingslist = True # True = on, False = off - Settings List at start
+disablemgplayerslistcommand = False # True = on, False = off - You can disable the mgplayerslist command if there are multiple of them when running single, multi and multimulti together
 
 # declare stats as global
 fightlevellimit = None
@@ -269,6 +274,8 @@ for entry in configList:
                 blackbuyspend = entry[1]
         if(entry[0] == "blackbuyspend14"):
                 blackbuyspend14 = entry[1]
+        if(entry[0] == "bottextmode"):
+                bottextmode = entry[1]
         if(entry[0] == "buylife"):
                 buylife = entry[1]
         if(entry[0] == "buyluck"):
@@ -277,6 +284,8 @@ for entry in configList:
                 buypower = entry[1]
         if(entry[0] == "creepattack"):
                 creepattack = entry[1]
+        if(entry[0] == "errortextmode"):
+                errortextmode = entry[1]
         if(entry[0] == "expbuy"):
                 expbuy = entry[1]
         if(entry[0] == "fightmode"):
@@ -287,6 +296,8 @@ for entry in configList:
                 goldsave = entry[1]
         if(entry[0] == "intervaltext"):
                 intervaltext = entry[1]
+        if(entry[0] == "pmtextmode"):
+                pmtextmode = entry[1]
         if(entry[0] == "scrollssum"):
                 scrollssum = entry[1]
         if(entry[0] == "setbuy"):
@@ -317,6 +328,7 @@ class MultiGamePlayBot(callbacks.Plugin):
         global currentversion
         global python3
         global russweb
+        global gitweb
 
         webversion = None
         try:
@@ -338,7 +350,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                     self.reply(irc, "You have the current version of PlayBot")
                 if(currentversion < webversion):
                     self.reply(irc, "You have an old version of PlayBot")
-                    self.reply(irc, "You can download a new version from {0}".format(russweb))
+                    self.reply(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
                 if(currentversion > webversion):
                     self.reply(irc, "Give me, Give me")
 
@@ -361,19 +373,25 @@ class MultiGamePlayBot(callbacks.Plugin):
         global townworkswitch
         global xpspend
         global xpupgrade
+        global bottextmode
+        global errortextmode
+        global pmtextmode
 
         configList = []
         configList.append( ( "blackbuyspend", blackbuyspend ) )
         configList.append( ( "blackbuyspend14", blackbuyspend14 ) )
+        configList.append( ( "bottextmode", bottextmode ) )
         configList.append( ( "buylife", buylife ) )
         configList.append( ( "buyluck", buyluck ) )
         configList.append( ( "buypower", buypower ) )
         configList.append( ( "creepattack", creepattack ) )
+        configList.append( ( "errortextmode", errortextmode ) )
         configList.append( ( "expbuy", expbuy ) )
         configList.append( ( "fightmode", fightmode ) )
         configList.append( ( "getgems", getgems ) )
         configList.append( ( "goldsave", goldsave ) )
         configList.append( ( "intervaltext", intervaltext ) )
+        configList.append( ( "pmtextmode", pmtextmode ) )
         configList.append( ( "scrollssum", scrollssum ) )
         configList.append( ( "setbuy", setbuy ) )
         configList.append( ( "setcreeptarget", setcreeptarget ) )
@@ -422,6 +440,9 @@ class MultiGamePlayBot(callbacks.Plugin):
         global buypower
         global gameactive
         global slaysum
+        global bottextmode
+        global errortextmode
+        global pmtextmode
         
         if value.lower()=='true':
             value=True
@@ -587,6 +608,33 @@ class MultiGamePlayBot(callbacks.Plugin):
                         if value is False:
                                 buypower = False
                                 irc.reply("Buying Power Potions Mode Deactivated.  To turn it back on use 'setoption buypower true' command", private=True)
+                if text == "bottext":
+        ##              Turns Bot Messages on
+                        if value is True:
+                                bottextmode = True
+                                irc.reply("Bot Text Mode On.  To turn it back off use 'setoption bottextmode false' command", private=True)
+        ##              Turns Bot Messages off
+                        if value is False:
+                                bottextmode = False
+                                irc.reply("Bot Text Mode Off.  To turn it back on use 'setoption bottextmode true' command", private=True)
+                if text == "errortext":
+        ##              Turns Error Messages on
+                        if value is True:
+                                errortextmode = True
+                                irc.reply("Error Text Mode On.  To turn it back off use 'setoption errortext false' command", private=True)
+        ##              Turns Error Messages off
+                        if value is False:
+                                errortextmode = False
+                                irc.reply("Error Text Mode Off.  To turn it back on use 'setoption errortext true' command", private=True)
+                if text == "pmtext":
+        ##              Turns PMs from GameBot on
+                        if value is True:
+                                pmtextmode = True
+                                irc.reply("Turns PMs from GameBot on.  To turn it back off use 'setoption pmtext false' command", private=True)
+        ##              Turns PMs from GameBot off
+                        if value is False:
+                                pmtextmode = False
+                                irc.reply("Turns PMs from GameBot off.  To turn it back on use 'setoption pmtext true' command", private=True)
 
                 self.configwrite()
         if gameactive is False:
@@ -790,6 +838,9 @@ class MultiGamePlayBot(callbacks.Plugin):
         global slaysum
         global pbcount
         global loginsettingslist
+        global bottextmode
+        global errortextmode
+        global pmtextmode
 
         charcount += 1
 
@@ -828,6 +879,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                         for entry in gamelist:
                                 netlist.append( ( entry[0] ) )
                         irc.error("Networks supported: {0}".format(netlist))
+                        irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname))
                         if "quakenet" in netname.lower():
                                 irc.error("You need to use the QuakeNet version of PlayBot")
                 if(name is None or pswd is None or netcheck is False):
@@ -964,6 +1016,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                         irc.reply("BlackBuy Spend 14 Mode Activated.  To turn it off use 'setoption blackbuy14 false' command", private=True)
                 if blackbuyspend14 is False:
                         irc.reply("BlackBuy Spend 14 Mode Deactivated.  To turn it off use 'setoption blackbuy14 true' command", private=True)
+                if bottextmode is True:
+                        irc.reply("Bot Text Mode Activated.  To turn it off use 'setoption bottext false' command", private=True)
                 if buylife is True:
                         irc.reply("Buy Life Mode Activated.  To turn it off use 'setoption buylife false' command", private=True)
                 if buylife is False:
@@ -980,6 +1034,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                         irc.reply("CreepAttack Mode Activated.  To turn it off use 'setoption creepattack false' command", private=True)
                 if creepattack is False:
                         irc.reply("CreepAttack Mode Deactivated.  To turn it on use 'setoption creepattack true' command", private=True)
+                if errortextmode is True:
+                        irc.reply("Error Text Mode Activated.  To turn it off use 'setoption errortext false' command", private=True)
                 if expbuy is True:
                         irc.reply("Experience Buying Mode Activated.  To turn it off use 'setoption expbuy false' command", private=True)
                 if expbuy is False:
@@ -994,6 +1050,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                         irc.reply("GetGems Mode Deactivated.  To turn it on use 'setoption getgems true' command", private=True)
                 if intervaltext is True:
                         irc.reply("Interval Text Mode Activated.  To turn it off use 'setoption intervaltext false' command", private=True)
+                if pmtextmode is True:
+                        irc.reply("PMs from GameBot Mode Activated.  To turn it off use 'setoption pmtext false' command", private=True)
                 if townworkswitch is True:
                         irc.reply("Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
                 if townworkswitch is False:
@@ -1064,135 +1122,136 @@ class MultiGamePlayBot(callbacks.Plugin):
 
     logoutgame = wrap(logoutgame, [("checkCapability", "admin")])
 
-    def mgplayerslist(self, irc, msg, args):
-        """takes no arguments
+    if disablemgplayerslistcommand is False:
+            def mgplayerslist(self, irc, msg, args):
+                """takes no arguments
 
-        Lists players on all MultiGame plugins loaded
-        """
+                Lists players on all MultiGame plugins loaded
+                """
 
-        global multigame
-        global multigamemulti
-        global multigamemultimulti
+                global multigame
+                global multigamemulti
+                global multigamemultimulti
 
-        self.playbotcheck(irc)
-       
-        if multigame is True:
-                mgfileprefix3 = "multigamesingleplayers.txt"
-                path = conf.supybot.directories.data
-                mgfilename3 = path.dirize(mgfileprefix3)
-                mgcheck = True
-                try:
-                        f = open(mgfilename3,"rb")
-                        playerListS = pickle.load(f)
-                        f.close()
-                except:
-                        playerListS = []
-                try:
-                        mgsinglename = playerListS[0][1]
-                        mgsinglenetname = playerListS[0][3]
-                except IndexError:
-                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
-                        mgcheck = False
-                if mgcheck is True:
-                        irc.reply("MultiGame PlayBot Single", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character - {0}.  Network {1}".format(mgsinglename, mgsinglenetname), private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
+                self.playbotcheck(irc)
+               
+                if multigame is True:
+                        mgfileprefix3 = "multigamesingleplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename3 = path.dirize(mgfileprefix3)
+                        mgcheck = True
+                        try:
+                                f = open(mgfilename3,"rb")
+                                playerListS = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListS = []
+                        try:
+                                mgsinglename = playerListS[0][1]
+                                mgsinglenetname = playerListS[0][3]
+                        except IndexError:
+                                irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
+                                mgcheck = False
+                        if mgcheck is True:
+                                irc.reply("MultiGame PlayBot Single", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character - {0}.  Network {1}".format(mgsinglename, mgsinglenetname), private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
 
-        if multigamemulti is True:
-                mgfileprefix4 = "multigamemultiplayers.txt"
-                path = conf.supybot.directories.data
-                mgfilename4 = path.dirize(mgfileprefix4)
-                mgmcheck = False
-                try:
-                        f = open(mgfilename4,"rb")
-                        playerListM = pickle.load(f)
-                        f.close()
-                except:
-                        playerListM = []
-                count = 0
-                mgmultiname = None
-                mgmultiname2 = None
-                mgmultiname3 = None
-                mgmultiname4 = None
-                mgmultinetname = None
-                mgmultinetname2 = None
-                mgmultinetname3 = None
-                mgmultinetname4 = None
-                for entry in playerListM:
-                        count += 1
-                        if count == 1:
-                                mgmultiname = entry[1]
-                                mgmultinetname = entry[3]
-                                mgmcheck = True
-                        if count == 2:
-                                mgmultiname2 = entry[1]
-                                mgmultinetname2 = entry[3]
-                        if count == 3:
-                                mgmultiname3 = entry[1]
-                                mgmultinetname3 = entry[3]
-                        if count == 4:
-                                mgmultiname4 = entry[1]
-                                mgmultinetname4 = entry[3]
-                if mgmcheck is False:
-                        irc.reply("No Players Logged in on MultiGamePlayBotMulti", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
-                if mgmcheck is True:
-                        irc.reply("MultiGame PlayBot Multi", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
-                        irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
+                if multigamemulti is True:
+                        mgfileprefix4 = "multigamemultiplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename4 = path.dirize(mgfileprefix4)
+                        mgmcheck = False
+                        try:
+                                f = open(mgfilename4,"rb")
+                                playerListM = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListM = []
+                        count = 0
+                        mgmultiname = None
+                        mgmultiname2 = None
+                        mgmultiname3 = None
+                        mgmultiname4 = None
+                        mgmultinetname = None
+                        mgmultinetname2 = None
+                        mgmultinetname3 = None
+                        mgmultinetname4 = None
+                        for entry in playerListM:
+                                count += 1
+                                if count == 1:
+                                        mgmultiname = entry[1]
+                                        mgmultinetname = entry[3]
+                                        mgmcheck = True
+                                if count == 2:
+                                        mgmultiname2 = entry[1]
+                                        mgmultinetname2 = entry[3]
+                                if count == 3:
+                                        mgmultiname3 = entry[1]
+                                        mgmultinetname3 = entry[3]
+                                if count == 4:
+                                        mgmultiname4 = entry[1]
+                                        mgmultinetname4 = entry[3]
+                        if mgmcheck is False:
+                                irc.reply("No Players Logged in on MultiGamePlayBotMulti", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
+                        if mgmcheck is True:
+                                irc.reply("MultiGame PlayBot Multi", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
 
-        if multigamemultimulti is True:
-                mgfileprefix5 = "multigamemultimultiplayers.txt"
-                path = conf.supybot.directories.data
-                mgfilename5 = path.dirize(mgfileprefix5)
-                mgmmcheck = False
-                try:
-                        f = open(mgfilename5,"rb")
-                        playerListMM = pickle.load(f)
-                        f.close()
-                except:
-                        playerListMM = []
-                count = 0
-                mgmultimultiname = None
-                mgmultimultiname2 = None
-                mgmultimultiname3 = None
-                mgmultimultiname4 = None
-                mgmultimultinetname = None
-                mgmultimultinetname2 = None
-                mgmultimultinetname3 = None
-                mgmultimultinetname4 = None
-                for entry in playerListMM:
-                        count += 1
-                        if count == 1:
-                                mgmultimultiname = entry[1]
-                                mgmultimultinetname = entry[3]
-                                mgmmcheck = True
-                        if count == 2:
-                                mgmultimultiname2 = entry[1]
-                                mgmultimultinetname2 = entry[3]
-                        if count == 3:
-                                mgmultimultiname3 = entry[1]
-                                mgmultimultinetname3 = entry[3]
-                        if count == 4:
-                                mgmultimultiname4 = entry[1]
-                                mgmultimultinetname4 = entry[3]
-                if mgmmcheck is False:
-                        irc.reply("No Players Logged in on MultiGamePlayBotMultiMulti", private=True)
-                if mgmmcheck is True:
-                        irc.reply("MultiGame PlayBot MultiMulti", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultimultiname, mgmultimultinetname, mgmultimultiname2, mgmultimultinetname2), private=True)
-                        irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultimultiname3, mgmultimultinetname3, mgmultimultiname4, mgmultimultinetname4), private=True)
+                if multigamemultimulti is True:
+                        mgfileprefix5 = "multigamemultimultiplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename5 = path.dirize(mgfileprefix5)
+                        mgmmcheck = False
+                        try:
+                                f = open(mgfilename5,"rb")
+                                playerListMM = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListMM = []
+                        count = 0
+                        mgmultimultiname = None
+                        mgmultimultiname2 = None
+                        mgmultimultiname3 = None
+                        mgmultimultiname4 = None
+                        mgmultimultinetname = None
+                        mgmultimultinetname2 = None
+                        mgmultimultinetname3 = None
+                        mgmultimultinetname4 = None
+                        for entry in playerListMM:
+                                count += 1
+                                if count == 1:
+                                        mgmultimultiname = entry[1]
+                                        mgmultimultinetname = entry[3]
+                                        mgmmcheck = True
+                                if count == 2:
+                                        mgmultimultiname2 = entry[1]
+                                        mgmultimultinetname2 = entry[3]
+                                if count == 3:
+                                        mgmultimultiname3 = entry[1]
+                                        mgmultimultinetname3 = entry[3]
+                                if count == 4:
+                                        mgmultimultiname4 = entry[1]
+                                        mgmultimultinetname4 = entry[3]
+                        if mgmmcheck is False:
+                                irc.reply("No Players Logged in on MultiGamePlayBotMultiMulti", private=True)
+                        if mgmmcheck is True:
+                                irc.reply("MultiGame PlayBot MultiMulti", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultimultiname, mgmultimultinetname, mgmultimultiname2, mgmultimultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultimultiname3, mgmultimultinetname3, mgmultimultiname4, mgmultimultinetname4), private=True)
 
-    mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
+            mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
 
     def multimultiread(self, irc):
         try:
@@ -1378,6 +1437,8 @@ class MultiGamePlayBot(callbacks.Plugin):
             irc.reply("BlackBuy Spend Mode On      - setoption blackbuy true", private=True)
             irc.reply("BlackBuy 14 Spend Mode Off  - setoption blackbuy14 false", private=True)
             irc.reply("BlackBuy 14 Spend Mode On   - setoption blackbuy14 true", private=True)
+            irc.reply("Bot Text Mode Off           - setoption bottext false", private=True)
+            irc.reply("Bot Text Mode On            - setoption bottext true", private=True)
             irc.reply("Buy Life Mode Off           - setoption buylife false", private=True)
             irc.reply("Buy Life Mode On            - setoption buylife true", private=True)
             irc.reply("Buy Luck Potion Mode Off    - setoption buyluck false", private=True)
@@ -1388,11 +1449,15 @@ class MultiGamePlayBot(callbacks.Plugin):
             irc.reply("CreepAttack Mode On         - setoption creepattack true", private=True)
             irc.reply("Erase Config File           - eraseconfig", private=True)
             irc.reply("Erase PlayerList            - mgsingleerase", private=True)
+            irc.reply("Error Text Mode Off         - setoption errortext false", private=True)
+            irc.reply("Error Text Mode On          - setoption errortext true", private=True)
             irc.reply("Experince Buying Mode Off   - setoption expbuy false", private=True)
             irc.reply("Experince Buying Mode On    - setoption expbuy true", private=True)
             irc.reply("Fighting Mode Off           - setoption fights false", private=True)
             irc.reply("Fighting Mode On            - setoption fights true", private=True)
             irc.reply("Fix Looper                  - fixlooper", private=True)
+            irc.reply("GameBot PMs Mode Off        - setoption pmtext false", private=True)
+            irc.reply("GameBot PMs Mode On         - setoption pmtext true", private=True)
             irc.reply("GetGems Mode Off            - setoption getgems false", private=True)
             irc.reply("GetGems Mode On             - setoption getgems true", private=True)
             irc.reply("Interval Text Mode Off      - setoption intervaltext false", private=True)
@@ -1434,7 +1499,6 @@ class MultiGamePlayBot(callbacks.Plugin):
             global buypower
             global setbuy
             global name
-            global gameactive
             global fightmode
             global blackbuyspend
             global blackbuyspend14
@@ -1450,26 +1514,28 @@ class MultiGamePlayBot(callbacks.Plugin):
             global netname
             global expbuy
             global slaysum
+            global bottextmode
+            global errortextmode
+            global pmtextmode
 
-            if gameactive is True:
-                irc.reply("Playbot Settings List", private=True)
-                irc.reply(" ", private=True)
-                if townworkswitch is True:
-                        irc.reply("Area Switch Mode - Town/Work", private=True)
-                if townworkswitch is False:
-                        irc.reply("Area Switch Mode - Town/Forest", private=True)
-                irc.reply("BlackBuy Spend Mode - {0}      BlackBuy 14 Spend Mode - {1}".format(blackbuyspend, blackbuyspend14), private=True)
-                irc.reply("Buy Life Mode - {0}            Buy Luck Potion Mode - {1}".format(buylife, buyluck), private=True)
-                irc.reply("Buy Power Potion Mode - {0}    CreepAttack Mode - {1}".format(buypower, creepattack), private=True)
-                irc.reply("Experience Buying Mode - {0}   Fighting Mode - {1}".format(expbuy, fightmode), private=True)
-                irc.reply("GetGems Mode - {0}             Goldsave - {1}".format(getgems, goldsave), private=True)
-                irc.reply("Interval Text Mode - {0}       Item Buy Level - {1}".format(intervaltext, setbuy), private=True)
-                irc.reply("Player Character - {0}.  Network {1}".format(name, netname), private=True)
-                irc.reply("Scrolls Buy ItemScore - {0}    Set Creep Target - {1}".format(scrollssum, setcreeptarget), private=True)
-                irc.reply("SlaySum Minimum - {0}".format(slaysum), private=True)
-                irc.reply("XPSpend Upgrade Amount - {0}   XPUpgrade Mode - {1}".format(xpspend, xpupgrade), private=True)
-            if gameactive is False:
-                irc.error("You are not logged in")
+            irc.reply("Playbot Settings List", private=True)
+            irc.reply(" ", private=True)
+            if townworkswitch is True:
+                    irc.reply("Area Switch Mode - Town/Work", private=True)
+            if townworkswitch is False:
+                    irc.reply("Area Switch Mode - Town/Forest", private=True)
+            irc.reply("BlackBuy Spend Mode - {0}      BlackBuy 14 Spend Mode - {1}".format(blackbuyspend, blackbuyspend14), private=True)
+            irc.reply("Bot Text Mode - {0}            Buy Life Mode - {1}".format(bottextmode, buylife), private=True)
+            irc.reply("Buy Luck Potion Mode - {0}     Buy Power Potion Mode - {1}".format(buyluck, buypower), private=True)
+            irc.reply("CreepAttack Mode - {0}         Error Text Mode - {1}".format(creepattack, errortextmode), private=True)
+            irc.reply("Experience Buying Mode - {0}   Fighting Mode - {1}".format(expbuy, fightmode), private=True)
+            irc.reply("GameBot PMs Mode - {0}         GetGems Mode - {1}".format(pmtextmode, getgems), private=True)
+            irc.reply("Goldsave - {0}                 Interval Text Mode - {1}".format(goldsave, intervaltext), private=True)
+            irc.reply("Item Buy Level - {0}".format(setbuy), private=True)
+            irc.reply("Player Character - {0}.  Network {1}".format(name, netname), private=True)
+            irc.reply("Scrolls Buy ItemScore - {0}    Set Creep Target - {1}".format(scrollssum, setcreeptarget), private=True)
+            irc.reply("SlaySum Minimum - {0}".format(slaysum), private=True)
+            irc.reply("XPSpend Upgrade Amount - {0}   XPUpgrade Mode - {1}".format(xpspend, xpupgrade), private=True)
 
     settings = wrap(settings, [("checkCapability", "admin")])
 
@@ -1483,6 +1549,7 @@ class MultiGamePlayBot(callbacks.Plugin):
         global level
         global fightlevellimit
         global playbottext
+        global errortextmode
         
         test = []
         test2 = []
@@ -1533,12 +1600,14 @@ class MultiGamePlayBot(callbacks.Plugin):
                         except:
                                 weberror = True
                         if weberror is True:
-                                self.reply(irc, playbottext + " - Could not access {0}".format(website))
+                                if errortextmode is True:
+                                        self.reply(irc, playbottext + " - Could not access {0}".format(website))
                                 webworks2 = False
 
                         # build list for player records
                         if(playerview20 is None):
-                                self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                                if errortextmode is True:
+                                        self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
                                 webworks2 = False
                         else:
                                 playerlist20 = playerview20.split("\n")
@@ -1745,7 +1814,8 @@ class MultiGamePlayBot(callbacks.Plugin):
 
         if newlistererror is True:
                 webworks = False
-                self.reply(irc, playbottext + " - Newlister Error")
+                if errortextmode is True:
+                        self.reply(irc, playbottext + " - Newlister Error")
 
         newlist.sort( key=operator.itemgetter(1), reverse=True )
         newlist.sort( key=operator.itemgetter(3) )
@@ -1869,6 +1939,7 @@ class MultiGamePlayBot(callbacks.Plugin):
             global playerspagelist
             global website
             global playbottext
+            global errortextmode
             
             webworks = True
             weberror = False
@@ -1895,90 +1966,37 @@ class MultiGamePlayBot(callbacks.Plugin):
                 weberror = True
 
             if weberror is True:
-                self.reply(irc, playbottext + " - Could not access {0}".format(website))
+                if errortextmode is True:
+                        self.reply(irc, playbottext + " - Could not access {0}".format(website))
                 webworks = False
 
             # build list for player records
             if(playerview is None):
-                    self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                    if errortextmode is True:
+                            self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
                     webworks = False
             else:
                     playerlist = playerview.split("\n")
                     playerlist = playerlist[:-1]
             if(playerspage is None):
-                    self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                    if errortextmode is True:
+                            self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
                     webworks = False
             else:
                     playerspagelist = playerspage.split("\n")
                     playerspagelist = playerspagelist[:-1]
 
     def playerarea(self, irc):
-        global playerlist
         global level
         global mysum
-        global webworks
         global location
         global locationtime
         global townworkswitch
         
-        playeris = None
-
-        atwork = False
-        intown = False
-        intheforest = False
-        worktext = None
-        towntext = None
-        foresttext = None
-        location = None
-        locationtime = 0
-
-        if webworks is True:
-                for entry in playerlist:
-                        if "Player is:" in entry:
-                                playeris = entry
-                        if "Work Time:" in entry:
-                                worktext = entry
-                        if "Town Time:" in entry:
-                                towntext = entry
-                        if "Forest Time:" in entry:
-                                foresttext = entry
-                                
-                if "at work" in playeris:
-                        atwork = True
-                if "in town" in playeris:
-                        intown = True
-                if "in the forest" in playeris:
-                        intheforest = True
-
         if townworkswitch is True:
                 area = "work"
         if townworkswitch is False:
                 area = "forest"
-
-        if atwork is True:
-                worktext = worktext.split(" ")
-                workdays = int(worktext[8])
-                worksplittime = worktext[10]
-                worksplittime = worksplittime.strip("<br")
-                locationtime = self.timetosecs(workdays, worksplittime)
-                location = "At Work"
-        if intown is True:
-                try:
-                        towntext = towntext.split(" ")
-                        towndays = int(towntext[8])
-                        townsplittime = towntext[10]
-                        townsplittime = townsplittime.strip("<br")
-                        locationtime = self.timetosecs(towndays, townsplittime)
-                        location = "In Town"
-                except ValueError:
-                        self.usecommand(irc, "goto {0}".format(area))
-        if intheforest is True:
-                foresttext = foresttext.split(" ")
-                forestdays = int(foresttext[8])
-                forestsplittime = foresttext[10]
-                forestsplittime = forestsplittime.strip("<br")
-                locationtime = self.timetosecs(forestdays, forestsplittime)
-                location = "In The Forest"
 
 #        self.reply(irc, "{0} Time: {1} seconds".format(location, locationtime))
         if (level <= 25):
@@ -1990,13 +2008,16 @@ class MultiGamePlayBot(callbacks.Plugin):
         if (level > 50):
                 mintime = (24 * 60 * 60)
 
-        if(intown is True and locationtime >= mintime and mysum < 6000 and mysum != 0):
+        if locationtime == 0:
                 self.usecommand(irc, "goto {0}".format(area))
-        if(intown is True and mysum >= 6000):
+                
+        if(location == "In Town" and locationtime >= mintime and mysum < 6000 and mysum != 0):
                 self.usecommand(irc, "goto {0}".format(area))
-        if(atwork is True and locationtime >= mintime):
+        if(location == "In Town" and mysum >= 6000):
+                self.usecommand(irc, "goto {0}".format(area))
+        if(location == "At Work" and locationtime >= mintime):
                 self.usecommand(irc, "goto town")
-        if(intheforest is True and locationtime >= (24 * 60 * 60)):
+        if(location == "In The Forest" and locationtime >= (24 * 60 * 60)):
                 self.usecommand(irc, "goto town")
 
     def getvariables(self):
@@ -2046,6 +2067,9 @@ class MultiGamePlayBot(callbacks.Plugin):
         global lottonum2
         global lottonum3
         global playbottext
+        global location
+        global locationtime
+        global errortextmode
         
         aligntext = None
         leveltext = None
@@ -2088,7 +2112,15 @@ class MultiGamePlayBot(callbacks.Plugin):
         lottonumtext2 = None
         lottonumtext3 = None
 
-        if webworks is True and gameactive is True:
+        playeris = None
+        worktext = None
+        towntext = None
+        foresttext = None
+        atwork = False
+        intown = False
+        intheforest = False                       
+
+        if webworks is True and gameactive is True and playerlist != None:
                 for entry in playerlist:
                         if "Alignment:" in entry:
                                 aligntext = entry
@@ -2168,6 +2200,15 @@ class MultiGamePlayBot(callbacks.Plugin):
                                 lottonumtext2 = entry
                         if "Lotto Numbers 3:" in entry:
                                 lottonumtext3 = entry
+
+                        if "Player is:" in entry:
+                                playeris = entry
+                        if "Work Time:" in entry:
+                                worktext = entry
+                        if "Town Time:" in entry:
+                                towntext = entry
+                        if "Forest Time:" in entry:
+                                foresttext = entry
 
                 try:
                         try:
@@ -2330,9 +2371,51 @@ class MultiGamePlayBot(callbacks.Plugin):
                         lottonum1 = "{0} {1} and {2}".format(lottonumtext1[11], lottonumtext1[12], lottonumtext1[13])                        
                         lottonum2 = "{0} {1} and {2}".format(lottonumtext2[11], lottonumtext2[12], lottonumtext2[13])                        
                         lottonum3 = "{0} {1} and {2}".format(lottonumtext3[11], lottonumtext3[12], lottonumtext3[13])                        
+
+                        if "at work" in playeris:
+                                atwork = True
+                        if "in town" in playeris:
+                                intown = True
+                        if "in the forest" in playeris:
+                                intheforest = True
+                        if atwork is True:
+                                try:
+                                        worktext = worktext.split(" ")
+                                        workdays = int(worktext[8])
+                                        worksplittime = worktext[10]
+                                        worksplittime = worksplittime.strip("<br")
+                                        locationtime = self.timetosecs(workdays, worksplittime)
+                                        location = "At Work"
+                                except ValueError:
+                                        locationtime = 0
+                                        location = "At Work"
+                        if intown is True:
+                                try:
+                                        towntext = towntext.split(" ")
+                                        towndays = int(towntext[8])
+                                        townsplittime = towntext[10]
+                                        townsplittime = townsplittime.strip("<br")
+                                        locationtime = self.timetosecs(towndays, townsplittime)
+                                        location = "In Town"
+                                except ValueError:
+                                        locationtime = 0
+                                        location = "In Town"
+                        if intheforest is True:
+                                try:
+                                        foresttext = foresttext.split(" ")
+                                        forestdays = int(foresttext[8])
+                                        forestsplittime = foresttext[10]
+                                        forestsplittime = forestsplittime.strip("<br")
+                                        locationtime = self.timetosecs(forestdays, forestsplittime)
+                                        location = "In The Forest"
+                                except ValueError:
+                                        locationtime = 0
+                                        location = "In The Forest"
+
                 except:
                         webworks = False
-                        self.reply(irc, playbottext + " - Variable Error")
+                        if errortextmode is True:
+                                self.reply(irc, playbottext + " - Variable Error")
 
     def timetosecs(self, days, timetext):
         timesecs = 0
@@ -2357,6 +2440,7 @@ class MultiGamePlayBot(callbacks.Plugin):
             global buypower
             global slaysum
             global playbotext
+            global bottextmode
             
             # make sure no times are negative
             if(atime < 0):
@@ -2381,7 +2465,8 @@ class MultiGamePlayBot(callbacks.Plugin):
 
             if(ttl <= interval and ttl > 0):
                     timer = time.time() + (ttl+10)
-                    self.reply(irc, playbottext + " - Set lvlup timer. Going off in {0} minutes.".format(ttl // 60))
+                    if bottextmode is True:
+                            self.reply(irc, playbottext + " - Set lvlup timer. Going off in {0} minutes.".format(ttl // 60))
                     try:
                         schedule.addEvent(lvlupgomgs, timer, "lvlupmgs")
                     except AssertionError:
@@ -2394,7 +2479,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                         powerpots = 1
 
                     timer = time.time() + (atime+10)
-                    self.reply(irc, playbottext + " - Set attack timer. Going off in {0} minutes.".format(atime // 60))
+                    if bottextmode is True:
+                            self.reply(irc, playbottext + " - Set attack timer. Going off in {0} minutes.".format(atime // 60))
                     slaydisable = True
 
                     if powerpots == 0:
@@ -2404,6 +2490,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                                 schedule.removeEvent('attackmgs')
                                 schedule.addEvent(attackgomgs, timer, "attackmgs")                        
                     if powerpots == 1:
+                            powerpots = 0
                             try:
                                 schedule.addEvent(attackgobmgs, timer, "attackmgs")
                             except AssertionError:
@@ -2417,14 +2504,17 @@ class MultiGamePlayBot(callbacks.Plugin):
                         mana = 1
                     timer = time.time() + (stime+10)
                     if mana == 0 and attackslaySum >= slaysum:
-                            self.reply(irc, playbottext + " - Set slay timer. Going off in {0} minutes.".format(stime // 60))
+                            if bottextmode is True:
+                                    self.reply(irc, playbottext + " - Set slay timer. Going off in {0} minutes.".format(stime // 60))
                             try:
                                 schedule.addEvent(slaygomgs, timer, "slaymgs")
                             except AssertionError:
                                 schedule.removeEvent('slaymgs')
                                 schedule.addEvent(slaygomgs, timer, "slaymgs")
                     if mana == 1:
-                            self.reply(irc, playbottext + " - Set slay timer. Going off in {0} minutes.".format(stime // 60))
+                            if bottextmode is True:
+                                    self.reply(irc, playbottext + " - Set slay timer. Going off in {0} minutes.".format(stime // 60))
+                            mana = 0
                             try:
                                 schedule.addEvent(slaygobmgs, timer, "slaymgs")
                             except AssertionError:
@@ -2526,29 +2616,6 @@ class MultiGamePlayBot(callbacks.Plugin):
                 gold -= lifebuy
                 life = 100
                 
-        if(level >= 15 and buyluck is True):
-                if(luck == 0 and gold >= 2100):
-                        self.usecommand(irc, "buy luck")
-                        luck = 1
-                        gold -= 1000
-                        
-        if(expbuy is True and exp < 5):
-                expdiff = 5 - exp
-                expcost = expdiff * 1000
-                if(gold >= (expcost + 1100)):
-                        for i in range(expdiff):
-                                self.usecommand(irc, "buy exp")
-                                gold -= 1000
-                                exp += 1
-                elif(gold >= 1000 + 1100):
-                        golddiff = gold - 1100
-                        expcalc = golddiff // 1000
-                        if expcalc >= 1:
-                                for i in range(expcalc):
-                                        self.usecommand(irc, "buy exp")
-                                        gold -= 1000
-                                        exp += 1
-
         gembuy = True
         if(level >= 35):
                 if upgradelevel == 0 and gold < 600:
@@ -2586,6 +2653,29 @@ class MultiGamePlayBot(callbacks.Plugin):
                         gold -= 8000
                         upgradelevel = 5
                 
+        if(gembuy is True and level >= 15 and buyluck is True):
+                if(luck == 0 and gold >= 2100):
+                        self.usecommand(irc, "buy luck")
+                        luck = 1
+                        gold -= 1000
+                        
+        if(gembuy is True and expbuy is True and exp < 5):
+                expdiff = 5 - exp
+                expcost = expdiff * 1000
+                if(gold >= (expcost + 1100)):
+                        for i in range(expdiff):
+                                self.usecommand(irc, "buy exp")
+                                gold -= 1000
+                                exp += 1
+                elif(gold >= 1000 + 1100):
+                        golddiff = gold - 1100
+                        expcalc = golddiff // 1000
+                        if expcalc >= 1:
+                                for i in range(expcalc):
+                                        self.usecommand(irc, "buy exp")
+                                        gold -= 1000
+                                        exp += 1
+
 #        self.reply(irc, "goldsave: {0}  gembuy: {1}  level: {2}  upgradelevel: {3}  align: {4}".format(goldsave, gembuy, level, upgradelevel, align))
         
         if(level >= setbuy):
@@ -2745,10 +2835,12 @@ class MultiGamePlayBot(callbacks.Plugin):
             global life
             global buypower
             global playbottext
+            global bottextmode
            
             level += 1
 
-            self.reply(irc, playbottext + " - {0} has reached level {1}!".format(name, level))
+            if bottextmode is True:
+                    self.reply(irc, playbottext + " - {0} has reached level {1}!".format(name, level))
 
             interval = 60
             self.looper(irc)
@@ -2771,6 +2863,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                                     schedule.removeEvent('attackmgs')
                                     schedule.addEvent(attackgomgs, 0, "attackmgs")                        
                     if powerpots == 1:
+                            powerpots = 0
                             try:
                                     schedule.addEvent(attackgobmgs, 0, "attackmgs")
                             except AssertionError:
@@ -2790,6 +2883,7 @@ class MultiGamePlayBot(callbacks.Plugin):
             global life
             global fightmode
             global playbottext
+            global bottextmode
 
             ufight = self.testfight()
 
@@ -2818,7 +2912,8 @@ class MultiGamePlayBot(callbacks.Plugin):
             ufightcalc = fightAdj / ufight[2]
 
             if(level >= 25):
-                self.reply(irc, playbottext + " - Best fight for Rank {0}:  {1}  [{2}]  Opponent: Rank {3}:  {4}  [{5}], Odds {6}".format(rank, name, int(fightAdj), ufight[6], ufight[0], int(ufight[2]), ufightcalc))
+                if bottextmode is True:
+                        self.reply(irc, playbottext + " - Best fight for Rank {0}:  {1}  [{2}]  Opponent: Rank {3}:  {4}  [{5}], Odds {6}".format(rank, name, int(fightAdj), ufight[6], ufight[0], int(ufight[2]), ufightcalc))
                 if(ufightcalc >= 0.9 and fightmode is True):
                         self.usecommand(irc, "fight {0}".format( ufight[0] ))
                         fights += 1
@@ -3007,6 +3102,7 @@ class MultiGamePlayBot(callbacks.Plugin):
         global level
         global buylife
         global playbottext
+        global pmtextmode
 
         messagelist = [ ["You are not recovered"],    \
                         ["FIGHT Request Denied:"],    \
@@ -3032,22 +3128,23 @@ class MultiGamePlayBot(callbacks.Plugin):
                          ["| Gold:"],            \
                          ["| Fights Used:"],            \
                          ["| Power Potion:"],            \
+                         ["| Lotto 1:"],            \
                          ["| Stone 1:"],            \
                          ["| Expert 1:"],            \
                          ["| Next Creep Attack:"],            \
-                         ["| Tournament Recover:"],            ]
+                         ["| Tournament Recover:"],            \
+                         ["| Quest Recover Time:"],            ]
         
         if gameactive is True:
 
-            try:
-                checknick = irc.nick
-                checknet = self._getIrcName(irc)
-                chanmsgnick = msg.nick
-                (channel, text) = msg.args
-            except ValueError:
-                return
-
             if msg.command == 'PRIVMSG':
+                try:
+                        checknick = irc.nick
+                        checknet = self._getIrcName(irc)
+                        chanmsgnick = msg.nick
+                        (channel, text) = msg.args
+                except ValueError:
+                        return
                 if "IRC connection timed out" in text:
                         return
                 if "Disconnected from IRC" in text:
@@ -3079,31 +3176,32 @@ class MultiGamePlayBot(callbacks.Plugin):
                                         life = 100
 
                 if(checknick == supynick and checknet == netname):
+                        if(botname == chanmsgnick and "You are not logged in" in text):
+                            if pmtextmode is True:
+                                    self.reply(irc, playbottext + " - {0}".format(text))
+                            self.usecommand(irc, "login {0} {1}".format(name, pswd) )
+                            interval = 60
+                            self.looper(irc)
+                            return               
                         for entry in messagelist:
                             if(botname == chanmsgnick and entry[0] in text):
-                                self.reply(irc, playbottext + " - {0}".format(text))
+                                if pmtextmode is True:
+                                        self.reply(irc, playbottext + " - {0}".format(text))
                                 return
                         for entry in messagelist2:
                             if(botname == chanmsgnick and entry[0] in text):
                                 return
                         if(botname == chanmsgnick and "You are {0}".format(name) in text):
-                            self.reply(irc, playbottext + " - {0}".format(text))
+                            if pmtextmode is True:
+                                    self.reply(irc, playbottext + " - {0}".format(text))
                             return
-                        if(botname == chanmsgnick and "Lotto 1:" in text):
-#                            self.reply(irc, playbottext + " - {0}".format(text))
-                            return
-                        if(botname == chanmsgnick and "You are not logged in." in text):
-                            self.reply(irc, playbottext + " - {0}".format(text))
-                            self.usecommand(irc, "login {0} {1}".format(name, pswd) )
-                            interval = 60
-                            self.looper(irc)
-                            return               
         return msg
 
     def doNick(self, irc, msg):
         global netname
         global nickname
         global gameactive
+        global bottextmode
 
         if gameactive is True:
             irc = self._getRealIrc(irc)
@@ -3113,7 +3211,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                     if nickname == msg.nick:
                         nickname = newNick
                         s = format(_('nick change by %s to %s'), msg.nick,newNick)
-                        self.reply(irc, s)
+                        if bottextmode is True:
+                                self.reply(irc, s)
 
     def _getRealIrc(self, irc):
         if isinstance(irc, irclib.Irc):
@@ -3128,7 +3227,6 @@ class MultiGamePlayBot(callbacks.Plugin):
     def main(self, irc):
         global channame
         global botname
-        global nickname
         global netname
         global otherIrc
         global supynick
@@ -3146,6 +3244,9 @@ class MultiGamePlayBot(callbacks.Plugin):
         global life
         global intervaltext
         global playbottext
+        global bottextmode
+        global errortextmode
+        global botdisable1
         
         self.playbotcheck(irc)
         if intervaltext is True:
@@ -3153,15 +3254,20 @@ class MultiGamePlayBot(callbacks.Plugin):
 
         botcheck = False
         chancheck = False
+        botdisable1 = False
         intervaldisable = False
         netcheck = True
+
+        self.bottester(irc)
 
         try:
                 checkotherIrc = self._getIrc(netname)
                 if checkotherIrc.server == "unset":
-                        self.reply(irc, playbottext + " - Server Error")
+                        if errortextmode is True:
+                                self.reply(irc, playbottext + " - Server Error")
         except NameError:
-                self.reply(irc, playbottext + " - Network not connected to supybot")
+                if errortextmode is True:
+                        self.reply(irc, playbottext + " - Network not connected to supybot")
                 netcheck = False
 
         chantest = otherIrc.state.channels
@@ -3180,8 +3286,10 @@ class MultiGamePlayBot(callbacks.Plugin):
                     if botname == entry:
                         botcheck = True
                 if botcheck is False:
+                        if errortextmode is True:
                             self.reply(irc, playbottext + " - Game Bot not in channel")
             except KeyError:
+                if errortextmode is True:
                         self.reply(irc, playbottext + " - Game Bot not in channel")
 
         if botcheck is True:
@@ -3204,7 +3312,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                         ranktext = ranktext.split("</")
                         rank = int(ranktext[0])
         if(webworks is True and offline is True):
-                self.reply(irc, playbottext + " - Player Offline")
+                if errortextmode is True:
+                        self.reply(irc, playbottext + " - Player Offline")
 
         if webworks is True and offline is True and botcheck is True:
                 if netcheck is True:
@@ -3224,7 +3333,8 @@ class MultiGamePlayBot(callbacks.Plugin):
                 self.spendmoney(irc)
                 self.timercheck(irc)
                 if(level >= 25 and fights >= 0 and fights < 5 and life > 0):
-                        self.reply(irc, playbottext + " - Fights available")
+                        if bottextmode is True:
+                                self.reply(irc, playbottext + " - Fights available")
                 if(level >= 25 and fights >= 0 and fights < 5 and life > 10):
                         self.newlister(irc)
                         self.fight_fight(irc)
