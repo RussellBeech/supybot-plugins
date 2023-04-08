@@ -47,6 +47,7 @@ import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
 import supybot.conf as conf
 import supybot.ircdb as ircdb
+import ssl
 
 if sys.version_info[0] >= 3:
         import urllib.error
@@ -67,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Quakenet #IdleRPG Playbot Script"
-__module_version__ = "1.5"
+__module_version__ = "1.6"
 __module_description__ = "Quakenet #IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -1357,10 +1358,11 @@ class QuakenetPlayBot(callbacks.Plugin):
 
                         # get raw player data from web, parse for relevant entry
                         try:
+                                context = ssl._create_unverified_context()
                                 if python3 is False:
-                                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name_))
+                                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name_), context=context)
                                 if python3 is True:
-                                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name_))
+                                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name_), context=context)
                                 playerview20 = text.read()
                                 text.close()
                                 if python3 is True:
@@ -1708,21 +1710,22 @@ class QuakenetPlayBot(callbacks.Plugin):
             
             webworks = True
             weberror = False
+            context = ssl._create_unverified_context()
 
             # get raw player data from web, parse for relevant entry
             try:
                 if python3 is False:
-                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name))
+                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name), context=context)
                 if python3 is True:
-                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name))
+                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name), context=context)
                 playerview = text.read()
                 text.close()
                 if python3 is True:
                         playerview = playerview.decode("UTF-8")
                 if python3 is False:
-                        text2 = urllib2.urlopen(website + "/players.php")
+                        text2 = urllib2.urlopen(website + "/players.php", context=context)
                 if python3 is True:
-                        text2 = urllib.request.urlopen(website + "/players.php")
+                        text2 = urllib.request.urlopen(website + "/players.php", context=context)
                 playerspage = text2.read()
                 text2.close()
                 if python3 is True:
@@ -2958,10 +2961,13 @@ class QuakenetPlayBot(callbacks.Plugin):
                 if "offline" in test:
                         offline = True
                 if offline is False:
-                        test = test.split('">')
-                        ranktext = test[1]
-                        ranktext = ranktext.split("</")
-                        rank = int(ranktext[0])
+                        try:
+                                test = test.split('">')
+                                ranktext = test[1]
+                                ranktext = ranktext.split("</")
+                                rank = int(ranktext[0])
+                        except:
+                                offline = True
         if(webworks is True and offline is True):
                 if errortextmode is True:
                         self.reply(irc, playbottext + " - Player Offline")

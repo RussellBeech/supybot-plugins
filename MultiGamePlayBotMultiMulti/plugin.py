@@ -47,6 +47,7 @@ import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
 import supybot.conf as conf
 import supybot.ircdb as ircdb
+import ssl
 
 if sys.version_info[0] >= 3:
         import urllib.error
@@ -67,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "MultiGame #IdleRPG Playbot Script"
-__module_version__ = "1.5"
+__module_version__ = "1.6"
 __module_description__ = "MultiGame #IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -125,13 +126,13 @@ monsters = [    ["Blue_Dragon",         7500],  \
 creeps.reverse()
 monsters.reverse()
 
-#               Network                 Website                                 FightLL ChanName        BotName                         GameID
-gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       True,   "#zw-idlerpg",  "IdleRPG",                      1],  \
-                ["dalnet",              "https://tilde.green/~hellspawn",       True,   "#irpg",        "DAL-IRPG",                     2], \
-                ["efnet",               "http://idle.rpgsystems.org",           True,   "#idlerpg",     "IdleRPG",                      3], \
-                ["technet",             "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG/IRC-nERDs",            4],  \
-                ["irc-nerds",           "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG",                      4],  \
-                ["twistednet",          "http://idlerpg.twistednet.org",        False,  "#idlerpg",     "IdleRPG",                      5]   ]
+#               Network                 Website                                 FightLL ChanName        BotName                         GameID  WebSSL
+gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       True,   "#zw-idlerpg",  "IdleRPG",                      1,      True],  \
+                ["dalnet",              "https://tilde.green/~hellspawn",       True,   "#irpg",        "DAL-IRPG",                     2,      True], \
+                ["efnet",               "http://idle.rpgsystems.org",           True,   "#idlerpg",     "IdleRPG",                      3,      False], \
+#                ["technet",             "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG/IRC-nERDs",            4,     False],  \
+                ["irc-nerds",           "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG",                      4,      False],  \
+                ["twistednet",          "http://idlerpg.twistednet.org",        False,  "#idlerpg",     "IdleRPG",                      5,      False]   ]
 
 russweb = "https://russellb.000webhostapp.com/"
 gitweb = "https://github.com/RussellBeech/supybot-plugins"
@@ -207,6 +208,10 @@ gameid = 0
 gameid2 = 0
 gameid3 = 0
 gameid4 = 0
+webssl = None
+webssl2 = None
+webssl3 = None
+webssl4 = None
 name = None
 pswd = None
 name2 = None
@@ -1150,6 +1155,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         global webworksC
         global webworksD
         global slaysum
+        global webssl
+        global webssl2
+        global webssl3
+        global webssl4
         global pbcount
         global loginsettingslist
         global bottextmode
@@ -1177,6 +1186,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 channame = entry[3]
                                 botname = entry[4]
                                 gameid = entry[5]
+                                webssl = entry[6]
                                 netcheck = True
 
                 self.playbotcheck(irc)
@@ -1299,6 +1309,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 channame2 = entry[3]
                                 botname2 = entry[4]
                                 gameid2 = entry[5]
+                                webssl2 = entry[6]
                                 netcheck = True
 
                 self.playbotcheck(irc)
@@ -1434,6 +1445,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 channame3 = entry[3]
                                 botname3 = entry[4]
                                 gameid3 = entry[5]
+                                webssl3 = entry[6]
                                 netcheck = True
 
                 self.playbotcheck(irc)
@@ -1572,6 +1584,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 channame4 = entry[3]
                                 botname4 = entry[4]
                                 gameid4 = entry[5]
+                                webssl4 = entry[6]
                                 netcheck = True
 
                 self.playbotcheck(irc)
@@ -1814,7 +1827,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         pswd4 = None
                         self.multimultiwrite(irc)
                 if charcount == 3:
-                        irc.reply("{0} on Network {1}. Logged Out".format(name3. netname3), private=True)
+                        irc.reply("{0} on Network {1}. Logged Out".format(name3, netname3), private=True)
                         char3 = False
                         netname3 = None
                         name3 = None
@@ -2437,6 +2450,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         global fightlevellimit2
         global fightlevellimit3
         global fightlevellimit4
+        global webssl
+        global webssl2
+        global webssl3
+        global webssl4
         global playbottext
         global errortextmode
         
@@ -2451,24 +2468,28 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                 playerspagelists = playerspagelist
                 websites = website
                 fightlevellimits = fightlevellimit
+                webssls = webssl
         if num == 2:
                 newlist2 = []
                 webworkslist = webworksB
                 playerspagelists = playerspagelist2
                 websites = website2
                 fightlevellimits = fightlevellimit2
+                webssls = webssl2
         if num == 3:
                 newlist3 = []
                 webworkslist = webworksC
                 playerspagelists = playerspagelist3
                 websites = website3
                 fightlevellimits = fightlevellimit3
+                webssls = webssl3
         if num == 4:
                 newlist4 = []
                 webworkslist = webworksD
                 playerspagelists = playerspagelist4
                 websites = website4
                 fightlevellimits = fightlevellimit4
+                webssls = webssl4
         self.getitems2(num)
 
         if webworkslist is True:
@@ -2503,10 +2524,17 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
 
                         # get raw player data from web, parse for relevant entry
                         try:
-                                if python3 is False:
-                                        text = urllib2.urlopen(websites + "/playerview.php?player={0}".format(name_))
-                                if python3 is True:
-                                        text = urllib.request.urlopen(websites + "/playerview.php?player={0}".format(name_))
+                                if webssls is True:
+                                        context = ssl._create_unverified_context()
+                                        if python3 is False:
+                                                text = urllib2.urlopen(websites + "/playerview.php?player={0}".format(name_), context=context)
+                                        if python3 is True:
+                                                text = urllib.request.urlopen(websites + "/playerview.php?player={0}".format(name_), context=context)
+                                else:
+                                        if python3 is False:
+                                                text = urllib2.urlopen(websites + "/playerview.php?player={0}".format(name_))
+                                        if python3 is True:
+                                                text = urllib.request.urlopen(websites + "/playerview.php?player={0}".format(name_))
                                 playerview20 = text.read()
                                 text.close()
                                 if python3 is True:
@@ -3056,6 +3084,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         global playerspage4
         global playerspagelist4
         global website4
+        global webssl
+        global webssl2
+        global webssl3
+        global webssl4
         global playbottext
         global errortextmode
         
@@ -3064,23 +3096,31 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         webworksC = True
         webworksD = True
         weberror = False
+        context = ssl._create_unverified_context()
 
         if num == 1:
                 websites = website
                 names = name
+                webssls = webssl
         if num == 2:
                 websites = website2
                 names = name2
+                webssls = webssl2
         if num == 3:
                 websites = website3
                 names = name3
+                webssls = webssl3
         if num == 4:
                 websites = website4
                 names = name4
+                webssls = webssl4
         # get raw player data from web, parse for relevant entry
         if python3 is False:
                 try:
-                        text = urllib2.urlopen(websites + "/playerview.php?player={0}".format(names))
+                        if webssls is True:
+                                text = urllib2.urlopen(websites + "/playerview.php?player={0}".format(names), context=context)
+                        else:
+                                text = urllib2.urlopen(websites + "/playerview.php?player={0}".format(names))
                         if num == 1:
                                 playerview = text.read()
                         if num == 2:
@@ -3090,7 +3130,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if num == 4:
                                 playerview4 = text.read()
                         text.close()
-                        text2 = urllib2.urlopen(websites + "/players.php")
+                        if webssls is True:
+                                text2 = urllib2.urlopen(websites + "/players.php", context=context)
+                        else:
+                                text2 = urllib2.urlopen(websites + "/players.php")
                         if num == 1:
                                 playerspage = text2.read()
                         if num == 2:
@@ -3104,12 +3147,18 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         weberror = True
         if python3 is True:
                 try:
-                        text = urllib.request.urlopen(websites + "/playerview.php?player={0}".format(names))
+                        if webssls is True:
+                                text = urllib.request.urlopen(websites + "/playerview.php?player={0}".format(names), context=context)
+                        else:
+                                text = urllib.request.urlopen(websites + "/playerview.php?player={0}".format(names))
                         if num == 1:
                                 playerview = text.read()
                                 text.close()
                                 playerview = playerview.decode("UTF-8")
-                                text2 = urllib.request.urlopen(websites + "/players.php")
+                                if webssls is True:
+                                        text2 = urllib.request.urlopen(websites + "/players.php", context=context)
+                                else:
+                                        text2 = urllib.request.urlopen(websites + "/players.php")
                                 playerspage = text2.read()
                                 text2.close()
                                 playerspage = playerspage.decode("UTF-8")
@@ -3117,7 +3166,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 playerview2 = text.read()
                                 text.close()
                                 playerview2 = playerview2.decode("UTF-8")
-                                text2 = urllib.request.urlopen(websites + "/players.php")
+                                if webssls is True:
+                                        text2 = urllib.request.urlopen(websites + "/players.php", context=context)
+                                else:
+                                        text2 = urllib.request.urlopen(websites + "/players.php")
                                 playerspage2 = text2.read()
                                 text2.close()
                                 playerspage2 = playerspage2.decode("UTF-8")
@@ -3125,7 +3177,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 playerview3 = text.read()
                                 text.close()
                                 playerview3 = playerview3.decode("UTF-8")
-                                text2 = urllib.request.urlopen(websites + "/players.php")
+                                if webssls is True:
+                                        text2 = urllib.request.urlopen(websites + "/players.php", context=context)
+                                else:
+                                        text2 = urllib.request.urlopen(websites + "/players.php")
                                 playerspage3 = text2.read()
                                 text2.close()
                                 playerspage3 = playerspage3.decode("UTF-8")
@@ -3133,7 +3188,10 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 playerview4 = text.read()
                                 text.close()
                                 playerview4 = playerview4.decode("UTF-8")
-                                text2 = urllib.request.urlopen(websites + "/players.php")
+                                if webssls is True:
+                                        text2 = urllib.request.urlopen(websites + "/players.php", context=context)
+                                else:
+                                        text2 = urllib.request.urlopen(websites + "/players.php")
                                 playerspage4 = text2.read()
                                 text2.close()
                                 playerspage4 = playerspage4.decode("UTF-8")
@@ -5386,10 +5444,13 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if "offline" in test:
                                 offline = True
                         if offline is False:
-                                test = test.split('">')
-                                ranktext = test[1]
-                                ranktext = ranktext.split("</")
-                                rank = int(ranktext[0])
+                                try:
+                                        test = test.split('">')
+                                        ranktext = test[1]
+                                        ranktext = ranktext.split("</")
+                                        rank = int(ranktext[0])
+                                except:
+                                        offline = True
         if webworksB is True and botcheck2 is True:
                 if char2 is True:
                         for entry in playerspagelist2:
@@ -5398,10 +5459,13 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if "offline" in test:
                                 offline2 = True
                         if offline2 is False:
-                                test = test.split('">')
-                                ranktext = test[1]
-                                ranktext = ranktext.split("</")
-                                rank2 = int(ranktext[0])
+                                try:
+                                        test = test.split('">')
+                                        ranktext = test[1]
+                                        ranktext = ranktext.split("</")
+                                        rank2 = int(ranktext[0])
+                                except:
+                                        offline2 = True
         if webworksC is True and botcheck3 is True:
                 if char3 is True:
                         for entry in playerspagelist3:
@@ -5410,10 +5474,13 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if "offline" in test:
                                 offline3 = True
                         if offline3 is False:
-                                test = test.split('">')
-                                ranktext = test[1]
-                                ranktext = ranktext.split("</")
-                                rank3 = int(ranktext[0])
+                                try:
+                                        test = test.split('">')
+                                        ranktext = test[1]
+                                        ranktext = ranktext.split("</")
+                                        rank3 = int(ranktext[0])
+                                except:
+                                        offline3 = True
         if webworksD is True and botcheck4 is True:
                 if char4 is True:
                         for entry in playerspagelist4:
@@ -5422,10 +5489,13 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if "offline" in test:
                                 offline4 = True
                         if offline4 is False:
-                                test = test.split('">')
-                                ranktext = test[1]
-                                ranktext = ranktext.split("</")
-                                rank4 = int(ranktext[0])
+                                try:
+                                        test = test.split('">')
+                                        ranktext = test[1]
+                                        ranktext = ranktext.split("</")
+                                        rank4 = int(ranktext[0])
+                                except:
+                                        offline4 = True
         if char1 is True and botcheck is True:
                 if(webworks is True and offline is True):
                         if errortextmode is True:
@@ -5493,13 +5563,13 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                
         life2 = 0
         level2 = 0
-        fight2 = 0
+        fights2 = 0
         life3 = 0
         level3 = 0
-        fight3 = 0
+        fights3 = 0
         life4 = 0
         level4 = 0
-        fight4 = 0
+        fights4 = 0
         
         if char1 is True:
                 if itemslists != None:
