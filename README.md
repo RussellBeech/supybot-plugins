@@ -26,4 +26,4 @@ MultiMulti - Up to 4 players over Multiple Games.
 QuakenetPlayBot and QuakeNetPlayBotMulti are PlayBots for IdleRPG game on QuakeNet #idlerpg  
 The different version are:  
 Single - Single player.  
-Multi - Up to 4 players.  
+Multi - Up to 4 players.
