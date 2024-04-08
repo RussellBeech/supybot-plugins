@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2018-2023, Russell Beech
+# Copyright (c) 2018-2024, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Multirpg Playbot Script"
-__module_version__ = "3.0"
+__module_version__ = "3.1"
 __module_description__ = "Multirpg Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -104,12 +104,12 @@ monsters = [    ["Medusa",      3500],  \
 
 # list of all networks
 #                   Network,        Server,                     NoLag   SNum    Port    SSL     BotHostMask
-networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      6667,   False,  "multirpg@venus.skralg.com"],  \
-                    ["AyoChat",     "149.202.240.157",          False,  2,      6667,   False,  "multirpg@venus.skralg.com"],  \
+networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      6667,   False,  ".skralg.com"],  \
+                    ["AyoChat",     "149.202.240.157",          False,  2,      6667,   False,  ".skralg.com"],  \
                     ["ChatLounge",  "irc.chatlounge.net",       True,   1,      6667,   False,  "multirpg@2001:579:9f05:1800:9119:8531:5e14:559"],  \
                     ["ChatLounge",  "185.34.216.32",            True,   2,      6667,   False,  "multirpg@2001:579:9f05:1800:9119:8531:5e14:559"],  \
-                    ["DALnet",      "irc.dal.net",              False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
-                    ["DALnet",      "94.125.182.251",           False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
+                    ["DALnet",      "irc.dal.net",              False,  1,      6667,   False,  ".skralg.com"], \
+                    ["DALnet",      "94.125.182.251",           False,  2,      6667,   False,  ".skralg.com"], \
                     ["EFnet",       "irc.efnet.net",            False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["EFnet",       "66.225.225.225",           False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["GameSurge",   "irc.gamesurge.net",        True,   1,      6667,   False,  "multirpg@multirpg.bot.gamesurge"],  \
@@ -140,7 +140,7 @@ networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      
                     ["UnderX",      "150.136.80.10",            False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["UniversalNet","irc.universalnet.org",     False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["UniversalNet","62.171.172.8",             False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
-                    ["Virtulus",    "virtulus.be.sexy",         True,   1,      6697,   True,   "multirpg@B790DC3F.D0CDF40.88109D7.IP"], \
+                    ["Virtulus",    "virtulus.ftp.sh",          True,   1,      6697,   True,   "multirpg@B790DC3F.D0CDF40.88109D7.IP"], \
                     ["Virtulus",    "129.153.131.239",          True,   2,      6697,   True,   "multirpg@B790DC3F.D0CDF40.88109D7.IP"] ]
 
 creeps.reverse()
@@ -148,8 +148,9 @@ monsters.reverse()
 
 multirpgweb = "https://www.multirpg.net/"
 idlerpgweb = "http://www.idlerpg.org/"
-russweb = "https://russellb.000webhostapp.com/"
+russweb = "http://russellb.x10.mx/"
 gitweb = "https://github.com/RussellBeech/supybot-plugins"
+gitweb2 = "https://raw.githubusercontent.com/RussellBeech/supybot-plugins/master/"
 rawplayers3 = None
 interval = 300
 newlist = None
@@ -361,8 +362,11 @@ class PlayBotSingle(callbacks.Plugin):
         global python3
         global russweb
         global gitweb
+        global gitweb2
 
         webversion = None
+        gitversion = None
+        newversion = 0
         try:
                 if python3 is False:
                         text = urllib2.urlopen(russweb + "playbotversionsupy.txt")
@@ -375,17 +379,39 @@ class PlayBotSingle(callbacks.Plugin):
         except:
                 self.reply(irc, "Could not access {0}".format(russweb))
 
+        try:
+                if python3 is False:
+                        text2 = urllib2.urlopen(gitweb2 + "playbotversionsupy.txt")
+                if python3 is True:
+                        text2 = urllib.request.urlopen(gitweb2 + "playbotversionsupy.txt")
+                gitversion = text2.read()
+                text2.close()
+                if python3 is True:
+                        gitversion = gitversion.decode("UTF-8")
+                gitversion = float( gitversion )
+
+        except:
+                self.reply(irc, "Could not access {0}".format(gitweb2))
+
         self.reply(irc, "Current version {0}".format(currentversion))
         self.reply(irc, "Web version {0}".format(webversion))
-        if webversion != None:
-                if(currentversion == webversion):
-                    self.reply(irc, "You have the current version of PlayBot")
-                if(currentversion < webversion):
-                    self.reply(irc, "You have an old version of PlayBot")
-                    self.reply(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
-                if(currentversion > webversion):
-                    self.reply(irc, "Give me, Give me")
+        self.reply(irc, "GitHub version {0}".format(gitversion))
+        if webversion > gitversion or (gitversion is None and webversion != None):
+                newversion = webversion
+        if webversion < gitversion or (webversion is None and gitversion != None):
+                newversion = gitversion
+        if webversion == gitversion:
+                newversion = gitversion
 
+        if newversion != None:
+                if(currentversion == newversion):
+                        self.reply(irc, "You have the current version of PlayBot")
+                if(currentversion < newversion):
+                        self.reply(irc, "You have an old version of PlayBot")
+                        self.reply(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
+                if(currentversion > newversion):
+                        self.reply(irc, "Give me, Give me")
+           
     def configwrite(self):
         global autostartmode
         global betmoney
