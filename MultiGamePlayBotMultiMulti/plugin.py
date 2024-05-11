@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2023, Russell Beech
+# Copyright (c) 2021-2024, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "MultiGame #IdleRPG Playbot Script"
-__module_version__ = "1.6"
+__module_version__ = "1.7"
 __module_description__ = "MultiGame #IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -128,14 +128,14 @@ monsters.reverse()
 
 #               Network                 Website                                 FightLL ChanName        BotName                         GameID  WebSSL
 gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       True,   "#zw-idlerpg",  "IdleRPG",                      1,      True],  \
-                ["dalnet",              "https://tilde.green/~hellspawn",       True,   "#irpg",        "DAL-IRPG",                     2,      True], \
                 ["efnet",               "http://idle.rpgsystems.org",           True,   "#idlerpg",     "IdleRPG",                      3,      False], \
-#                ["technet",             "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG/IRC-nERDs",            4,     False],  \
-                ["irc-nerds",           "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG",                      4,      False],  \
+                ["irc-nerds",           "http://irpgnerds.ddns.net",            True,   "#idlerpg",     "IdleRPG",                      4,      False],  \
+                ["rizon",               "https://tilde.green/~hellspawn",       True,   "#idle",        "iRPG",                         2,      True], \
                 ["twistednet",          "http://idlerpg.twistednet.org",        False,  "#idlerpg",     "IdleRPG",                      5,      False]   ]
 
-russweb = "https://russellb.000webhostapp.com/"
+russweb = "http://russellb.x10.mx/"
 gitweb = "https://github.com/RussellBeech/supybot-plugins"
+gitweb2 = "https://raw.githubusercontent.com/RussellBeech/supybot-plugins/master/"
 playerview = None 
 playerview2 = None 
 playerview3 = None 
@@ -423,8 +423,11 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         global python3
         global russweb
         global gitweb
+        global gitweb2
 
-        webversion = None
+        webversion = 0
+        gitversion = 0
+        newversion = 0
         try:
                 if python3 is False:
                         text = urllib2.urlopen(russweb + "playbotversionmultigamesupy.txt")
@@ -437,16 +440,38 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         except:
                 self.replymulti(irc, "Could not access {0}".format(russweb))
 
+        try:
+                if python3 is False:
+                        text2 = urllib2.urlopen(gitweb2 + "playbotversionmultigamesupy.txt")
+                if python3 is True:
+                        text2 = urllib.request.urlopen(gitweb2 + "playbotversionmultigamesupy.txt")
+                gitversion = text2.read()
+                text2.close()
+                if python3 is True:
+                        gitversion = gitversion.decode("UTF-8")
+                gitversion = float( gitversion )
+
+        except:
+                self.replymulti(irc, "Could not access {0}".format(gitweb2))
+
         self.replymulti(irc, "Current version {0}".format(currentversion))
         self.replymulti(irc, "Web version {0}".format(webversion))
-        if webversion != None:
-                if(currentversion == webversion):
-                    self.replymulti(irc, "You have the current version of PlayBot")
-                if(currentversion < webversion):
-                    self.replymulti(irc, "You have an old version of PlayBot")
-                    self.replymulti(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
-                if(currentversion > webversion):
-                    self.replymulti(irc, "Give me, Give me")
+        self.replymulti(irc, "GitHub version {0}".format(gitversion))
+        if webversion > gitversion:
+                newversion = webversion
+        if webversion < gitversion:
+                newversion = gitversion
+        if webversion == gitversion:
+                newversion = gitversion
+
+        if newversion > 0:
+                if(currentversion == newversion):
+                        self.replymulti(irc, "You have the current version of PlayBot")
+                if(currentversion < newversion):
+                        self.replymulti(irc, "You have an old version of PlayBot")
+                        self.replymulti(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
+                if(currentversion > newversion):
+                        self.replymulti(irc, "Give me, Give me")
 
     def configwrite(self):
         global blackbuyspend
@@ -2503,6 +2528,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                         testadd = False
                                 if testadd is True:
                                         test = re.sub(r'<.*?>', ' ', test)
+                                        test = re.sub(r"&#039;", "'", test)
                                         test = test.split(" ")
                                         if testnum == 1:
                                                 del test[0:14]
@@ -3700,9 +3726,12 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if errortextmode is True:
                                 self.replymulti(irc, "{0} Variable Error".format(num))
 
-                                  # num  mysum   level   life   ability   ttl 
-                itemslist = ( num, mysum_, level_, life_, ability_, ttl_, gold_, gems_, upgradelevel_, xp_, exp_, scrolls_, mana_, atime_, stime_, amulet_, boots_, charm_, gloves_, helm_, leggings_, ring_, shield_, tunic_, weapon_, expert1_, expert2_, expert3_, stone1_, stone2_, stone3_, fights_, align_, lottonum1_, lottonum2_, lottonum3_, eatused_, powerpots_, luck_, location_, locationtime_ )
-
+                try:
+                                          # num  mysum   level   life   ability   ttl 
+                        itemslist = ( num, mysum_, level_, life_, ability_, ttl_, gold_, gems_, upgradelevel_, xp_, exp_, scrolls_, mana_, atime_, stime_, amulet_, boots_, charm_, gloves_, helm_, leggings_, ring_, shield_, tunic_, weapon_, expert1_, expert2_, expert3_, stone1_, stone2_, stone3_, fights_, align_, lottonum1_, lottonum2_, lottonum3_, eatused_, powerpots_, luck_, location_, locationtime_ )
+                except:
+                        itemslist = ( num, None )
+                        
         return itemslist
 
     def getitems2(self, num):
@@ -3755,7 +3784,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                 
         if itemslists != None:
                 for entry in itemslists:
-                        if(entry[0] == num):
+                        if(entry[0] == num and entry[1] != None):
                                 mysum = entry[1]
                                 level = entry[2]
                                 life = entry[3]
@@ -4886,6 +4915,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         ["Shop available to 15+"],    \
                         ["Online players:"],    \
                         ["You are already"],    \
+                        ["You are a Zombie!"],    \
                         ["Try: ALIGN"],    \
                         ["That would be dumb"],            \
                         ["Welcome to the shop"],            \
@@ -4894,6 +4924,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         ["You first need to go to Town"],         \
                         ["You already have"],         \
                         ["You must explore the forest"],         \
+                        ["You don't have enough gems"],         \
                         ["You do not have any gold, you peasant...goto work!"],         \
                         ["Your lotto numbers set"],                ]
 
@@ -4932,7 +4963,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                         if(checknet == netname and checknick == supynick):
                                 if itemslists != None:
                                         for entry in itemslists:
-                                                if(entry[0] == 1):
+                                                if(entry[0] == 1 and entry[1] != None):
                                                         level = entry[2]
                                                         life = entry[3]
                                 lifebuy = False
@@ -4960,7 +4991,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 level2 = 0
                                 if itemslists != None:
                                         for entry in itemslists:
-                                                if(entry[0] == 2):
+                                                if(entry[0] == 2 and entry[1] != None):
                                                         level2 = entry[2]
                                                         life2 = entry[3]
                                 lifebuyb = False
@@ -4988,7 +5019,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 level3 = 0
                                 if itemslists != None:
                                         for entry in itemslists:
-                                                if(entry[0] == 3):
+                                                if(entry[0] == 3 and entry[1] != None):
                                                         level3 = entry[2]
                                                         life3 = entry[3]
                                 lifebuyc = False
@@ -5016,7 +5047,7 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
                                 level4 = 0
                                 if itemslists != None:
                                         for entry in itemslists:
-                                                if(entry[0] == 4):
+                                                if(entry[0] == 4 and entry[1] != None):
                                                         level4 = entry[2]
                                                         life4 = entry[3]
                                 lifebuyd = False
@@ -5574,28 +5605,28 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         if char1 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 1):
+                                if(entry[0] == 1 and entry[1] != None):
                                         level = entry[2]
                                         fights = entry[31]
                                         life = entry[3]
         if char2 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 2):
+                                if(entry[0] == 2 and entry[1] != None):
                                         level2 = entry[2]
                                         fights2 = entry[31]
                                         life2 = entry[3]
         if char3 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 3):
+                                if(entry[0] == 3 and entry[1] != None):
                                         level3 = entry[2]
                                         fights3 = entry[31]
                                         life3 = entry[3]
         if char4 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 4):
+                                if(entry[0] == 4 and entry[1] != None):
                                         level4 = entry[2]
                                         fights4 = entry[31]
                                         life4 = entry[3]
@@ -5686,28 +5717,28 @@ class MultiGamePlayBotMultiMulti(callbacks.Plugin):
         if char1 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 1):
+                                if(entry[0] == 1 and entry[1] != None):
                                         level = entry[2]
                                         fights = entry[31]
                                         life = entry[3]
         if char2 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 2):
+                                if(entry[0] == 2 and entry[1] != None):
                                         level2 = entry[2]
                                         fights2 = entry[31]
                                         life2 = entry[3]
         if char3 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 3):
+                                if(entry[0] == 3 and entry[1] != None):
                                         level3 = entry[2]
                                         fights3 = entry[31]
                                         life3 = entry[3]
         if char4 is True:
                 if itemslists != None:
                         for entry in itemslists:
-                                if(entry[0] == 4):
+                                if(entry[0] == 4 and entry[1] != None):
                                         level4 = entry[2]
                                         fights4 = entry[31]
                                         life4 = entry[3]

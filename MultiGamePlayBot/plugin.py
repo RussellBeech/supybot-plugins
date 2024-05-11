@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2023, Russell Beech
+# Copyright (c) 2021-2024, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "MultiGame IdleRPG Playbot Script"
-__module_version__ = "1.6"
+__module_version__ = "1.7"
 __module_description__ = "MultiGame IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -128,14 +128,14 @@ monsters.reverse()
 
 #               Network                 Website                                 FightLL ChanName        BotName                         GameID  WebSSL
 gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       True,   "#zw-idlerpg",  "IdleRPG",                      1,      True],  \
-                ["dalnet",              "https://tilde.green/~hellspawn",       True,   "#irpg",        "DAL-IRPG",                     2,      True], \
                 ["efnet",               "http://idle.rpgsystems.org",           True,   "#idlerpg",     "IdleRPG",                      3,      False], \
-#                ["technet",             "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG/IRC-nERDs",            4,     False],  \
-                ["irc-nerds",           "http://evilnet.idleirpg.site",         True,   "#idlerpg",     "IdleRPG",                      4,      False],  \
+                ["irc-nerds",           "http://irpgnerds.ddns.net",            True,   "#idlerpg",     "IdleRPG",                      4,      False],  \
+                ["rizon",               "https://tilde.green/~hellspawn",       True,   "#idle",        "iRPG",                         2,      True], \
                 ["twistednet",          "http://idlerpg.twistednet.org",        False,  "#idlerpg",     "IdleRPG",                      5,      False]   ]
 
-russweb = "https://russellb.000webhostapp.com/"
+russweb = "http://russellb.x10.mx/"
 gitweb = "https://github.com/RussellBeech/supybot-plugins"
+gitweb2 = "https://raw.githubusercontent.com/RussellBeech/supybot-plugins/master/"
 playerview = None 
 interval = 300
 newlist = None
@@ -330,9 +330,11 @@ class MultiGamePlayBot(callbacks.Plugin):
         global currentversion
         global python3
         global russweb
-        global gitweb
+        global gitweb2
 
-        webversion = None
+        webversion = 0
+        gitversion = 0
+        newversion = 0
         try:
                 if python3 is False:
                         text = urllib2.urlopen(russweb + "playbotversionmultigamesupy.txt")
@@ -345,16 +347,38 @@ class MultiGamePlayBot(callbacks.Plugin):
         except:
                 self.reply(irc, "Could not access {0}".format(russweb))
 
+        try:
+                if python3 is False:
+                        text2 = urllib2.urlopen(gitweb2 + "playbotversionmultigamesupy.txt")
+                if python3 is True:
+                        text2 = urllib.request.urlopen(gitweb2 + "playbotversionmultigamesupy.txt")
+                gitversion = text2.read()
+                text2.close()
+                if python3 is True:
+                        gitversion = gitversion.decode("UTF-8")
+                gitversion = float( gitversion )
+
+        except:
+                self.reply(irc, "Could not access {0}".format(gitweb2))
+
         self.reply(irc, "Current version {0}".format(currentversion))
         self.reply(irc, "Web version {0}".format(webversion))
-        if webversion != None:
-                if(currentversion == webversion):
-                    self.reply(irc, "You have the current version of PlayBot")
-                if(currentversion < webversion):
-                    self.reply(irc, "You have an old version of PlayBot")
-                    self.reply(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
-                if(currentversion > webversion):
-                    self.reply(irc, "Give me, Give me")
+        self.reply(irc, "GitHub version {0}".format(gitversion))
+        if webversion > gitversion:
+                newversion = webversion
+        if webversion < gitversion:
+                newversion = gitversion
+        if webversion == gitversion:
+                newversion = gitversion
+
+        if newversion > 0:
+                if(currentversion == newversion):
+                        self.reply(irc, "You have the current version of PlayBot")
+                if(currentversion < newversion):
+                        self.reply(irc, "You have an old version of PlayBot")
+                        self.reply(irc, "You can download a new version from {0} or {1}".format(russweb, gitweb))
+                if(currentversion > newversion):
+                        self.reply(irc, "Give me, Give me")
 
     def configwrite(self):
         global blackbuyspend
@@ -1573,6 +1597,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                                         testadd = False
                                 if testadd is True:
                                         test = re.sub(r'<.*?>', ' ', test)
+                                        test = re.sub(r"&#039;", "'", test)
                                         test = test.split(" ")
                                         if testnum == 1:
                                                 del test[0:14]
@@ -2046,7 +2071,7 @@ class MultiGamePlayBot(callbacks.Plugin):
         if(location == "In The Forest" and locationtime >= (24 * 60 * 60)):
                 self.usecommand(irc, "goto town")
 
-    def getvariables(self):
+    def getvariables(self, irc):
         global level
         global ttl
 
@@ -3138,6 +3163,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                         ["Shop available to 15+"],    \
                         ["Online players:"],    \
                         ["You are already"],    \
+                        ["You are a Zombie!"],    \
                         ["Try: ALIGN"],    \
                         ["That would be dumb"],            \
                         ["Welcome to the shop"],            \
@@ -3146,6 +3172,7 @@ class MultiGamePlayBot(callbacks.Plugin):
                         ["You first need to go to Town"],         \
                         ["You already have"],         \
                         ["You must explore the forest"],         \
+                        ["You don't have enough gems"],         \
                         ["You do not have any gold, you peasant...goto work!"],         \
                         ["Your lotto numbers set"],                ]
 
@@ -3321,7 +3348,7 @@ class MultiGamePlayBot(callbacks.Plugin):
         if botcheck is True:
                 self.webdata(irc)
                 if webworks is True:
-                        self.getvariables()
+                        self.getvariables(irc)
 
         test = []
         offline = False
