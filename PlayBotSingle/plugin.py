@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2018-2024, Russell Beech
+# Copyright (c) 2018-2025, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@ import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
 import supybot.conf as conf
 import supybot.ircdb as ircdb
+import ssl
 
 if sys.version_info[0] >= 3:
         import urllib.error
@@ -65,7 +66,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Multirpg Playbot Script"
-__module_version__ = "3.1"
+__module_version__ = "3.2"
 __module_description__ = "Multirpg Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -105,15 +106,15 @@ monsters = [    ["Medusa",      3500],  \
 # list of all networks
 #                   Network,        Server,                     NoLag   SNum    Port    SSL     BotHostMask
 networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      6667,   False,  ".skralg.com"],  \
-                    ["AyoChat",     "149.202.240.157",          False,  2,      6667,   False,  ".skralg.com"],  \
-                    ["ChatLounge",  "irc.chatlounge.net",       True,   1,      6667,   False,  "multirpg@2001:579:9f05:1800:9119:8531:5e14:559"],  \
-                    ["ChatLounge",  "185.34.216.32",            True,   2,      6667,   False,  "multirpg@2001:579:9f05:1800:9119:8531:5e14:559"],  \
+                    ["AyoChat",     "51.79.146.180",            False,  2,      6667,   False,  ".skralg.com"],  \
+                    ["ChatLounge",  "irc.chatlounge.net",       True,   1,      6667,   False,  "multirpg@venus.skralg.com"],  \
+                    ["ChatLounge",  "185.34.216.32",            True,   2,      6667,   False,  "multirpg@venus.skralg.com"],  \
                     ["DALnet",      "irc.dal.net",              False,  1,      6667,   False,  ".skralg.com"], \
                     ["DALnet",      "94.125.182.251",           False,  2,      6667,   False,  ".skralg.com"], \
                     ["EFnet",       "irc.efnet.net",            False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["EFnet",       "66.225.225.225",           False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["GameSurge",   "irc.gamesurge.net",        True,   1,      6667,   False,  "multirpg@multirpg.bot.gamesurge"],  \
-                    ["GameSurge",   "195.68.206.250",           True,   2,      6667,   False,  "multirpg@multirpg.bot.gamesurge"],  \
+                    ["GameSurge",   "192.223.27.109",           True,   2,      6667,   False,  "multirpg@multirpg.bot.gamesurge"],  \
                     ["IRC4Fun",     "irc.irc4fun.net",          False,  1,      6667,   False,  "multirpg@bots/multirpg"],  \
                     ["IRC4Fun",     "139.99.113.250",           False,  2,      6667,   False,  "multirpg@bots/multirpg"],  \
                     ["Koach",       "irc.koach.com",            False,  1,      6667,   False,  ".skralg.com"], \
@@ -122,12 +123,12 @@ networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      
                     ["Libera",      "130.185.232.126",          False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["mIRCPhantom", "irc.mircphantom.net",      False,  1,      6667,   False,  ".skralg.com"], \
                     ["mIRCPhantom", "51.89.198.165",            False,  2,      6667,   False,  ".skralg.com"], \
-                    ["Pissnet",     "irc.letspiss.net",         False,  1,      6667,   False,  ".skralg.com"], \
+                    ["Pissnet",     "irc.shitposting.space",    False,  1,      6667,   False,  ".skralg.com"], \
                     ["Pissnet",     "91.92.144.105",            False,  2,      6667,   False,  ".skralg.com"], \
                     ["QuakeNet",    "irc.quakenet.org",         False,  1,      6667,   False,  "multirpg@multirpg.users.quakenet.org"], \
                     ["QuakeNet",    "188.240.145.70",           False,  2,      6667,   False,  "multirpg@multirpg.users.quakenet.org"], \
                     ["Rizon",       "irc.rizon.net",            False,  1,      6667,   False,  ".skralg.com"], \
-                    ["Rizon",       "80.65.57.18",              False,  2,      6667,   False,  ".skralg.com"], \
+                    ["Rizon",       "45.88.6.116",              False,  2,      6667,   False,  ".skralg.com"], \
                     ["ScaryNet",    "irc.scarynet.org",         True,   1,      6667,   False,  "multirpg@venus.skralg.com"],  \
                     ["ScaryNet",    "69.162.163.62",            True,   2,      6667,   False,  "multirpg@venus.skralg.com"],  \
                     ["SkyChatz",    "irc.skychatz.org",         False,  1,      6667,   False,  "multirpg@skychatz.user.multirpg"],  \
@@ -206,6 +207,7 @@ intervaltextmode = True # True = on, False = off
 remotekill = True # True = on, False = off # Gives me the option if the PlayBot is flooding the GameBot to disable the PlayBot
 autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 loginsettingslister = True # True = on, False = off - Settings List at start
+fightcalcmin = 0.9 # minimum fightcalc you can fight somebody at
 
 # declare stats as global
 name = None
@@ -213,7 +215,7 @@ pswd = None
 servername = None
 networkname = None
 servernum = 1
-ssl = None
+ssl1 = None
 port = None
 connectfail = 0
 webfail = 0
@@ -1422,7 +1424,7 @@ class PlayBotSingle(callbacks.Plugin):
         global nolag
         global servername
         global port
-        global ssl
+        global ssl1
         global networkname
         global networklist
         global Owner
@@ -1459,7 +1461,7 @@ class PlayBotSingle(callbacks.Plugin):
                                             servername = entry[1]
                                             nolag = entry[2]
                                             port = entry[4]
-                                            ssl = entry[5]
+                                            ssl1 = entry[5]
                                             bothostmask = entry[6]
                                             networklistcheck = True                                
 
@@ -1484,7 +1486,7 @@ class PlayBotSingle(callbacks.Plugin):
                             if netcheck is False and networklistcheck is True:
                                 serverPort = (servername, port)
                                 newIrc = Owner._connect(network, serverPort=serverPort,
-                                                        password="", ssl=ssl)
+                                                        password="", ssl=ssl1)
                                 conf.supybot.networks().add(network)
                                 assert newIrc.callbacks is irc.callbacks, 'callbacks list is different'
                                 irc.replySuccess(_('Connection to %s initiated.') % network)
@@ -1900,10 +1902,11 @@ class PlayBotSingle(callbacks.Plugin):
                 websites = idlerpgweb
             # get raw player data from web, parse for relevant entry
             try:
+                context = ssl._create_unverified_context()
                 if python3 is True:
-                        text = urllib.request.urlopen(websites + "rawplayers3.php")
+                        text = urllib.request.urlopen(websites + "rawplayers3.php", context=context)
                 if python3 is False:
-                        text = urllib2.urlopen(websites + "rawplayers3.php")
+                        text = urllib2.urlopen(websites + "rawplayers3.php", context=context)
                 rawplayers3 = text.read()
                 text.close()
                 if python3 is True:
@@ -1913,7 +1916,7 @@ class PlayBotSingle(callbacks.Plugin):
 
             if weberror is True:
                 if errortextmode is True:
-                        self.reply(irc, playbottext + " - Could not access {0}".format(website))
+                        self.reply(irc, playbottext + " - Could not access {0}".format(websites))
                 webworks = False
 
             # build list for player records
@@ -2023,7 +2026,7 @@ class PlayBotSingle(callbacks.Plugin):
     def networklists(self, irc):
             global networkname
             global servername
-            global ssl
+            global ssl1
             global port
             global myentry
             global nolag
@@ -2071,7 +2074,7 @@ class PlayBotSingle(callbacks.Plugin):
                                     servername = entry[1]
                                     nolag = entry[2]
                                     port = entry[4]
-                                    ssl = entry[5]
+                                    ssl1 = entry[5]
                                     bothostmask = entry[6]
 
             if(connectfail >= connectretry):
@@ -2085,7 +2088,7 @@ class PlayBotSingle(callbacks.Plugin):
                                             servername = entry[1]
                                             nolag = entry[2]
                                             port = entry[4]
-                                            ssl = entry[5]
+                                            ssl1 = entry[5]
                                             bothostmask = entry[6]
                                             network = otherIrc.network
                                             group = conf.supybot.networks.get(network)
@@ -2097,21 +2100,21 @@ class PlayBotSingle(callbacks.Plugin):
                     servername = customservername
                     nolag = customnolag
                     port = customport
-                    ssl = customssl
+                    ssl1 = customssl
                     bothostmask = custombosthostmask
                 if servernum == 2:
                     servername = customservername2
                     nolag = customnolag
                     port = customport
-                    ssl = customssl
+                    ssl1 = customssl
                     bothostmask = custombosthostmask
             if ZNC is True:
                 servername = ZNCServer
                 nolag = ZNCnolag
                 port = ZNCPort
-                ssl = ZNCssl
+                ssl1 = ZNCssl
 
-#            self.reply(irc, "NetworkName: {0}, NoLag: {1}, Server: {2}, Port: {3}, SSL: {4}".format(networkname, nolag, servername, port, ssl))
+#            self.reply(irc, "NetworkName: {0}, NoLag: {1}, Server: {2}, Port: {3}, SSL: {4}".format(networkname, nolag, servername, port, ssl1))
 
     def getvariables(self):
             global rawmyentry
@@ -2701,6 +2704,7 @@ class PlayBotSingle(callbacks.Plugin):
             global rawstatsmode
             global bottextmode
             global playbottext
+            global fightcalcmin
 
             ufight = self.testfight()
 
@@ -2728,7 +2732,7 @@ class PlayBotSingle(callbacks.Plugin):
             if(level >= 10):
                     if bottextmode is True:
                             self.reply(irc, playbottext + " - Best fight for Rank {0}: {1} [{2}]  Opponent: Rank {3}: {4} [{5}], Odds {6}".format(ranknumber, name, int(fightSum), ufight[5], ufight[0], int(ufight[2]), ufightcalc))
-                    if(ufightcalc >= 0.9):
+                    if(ufightcalc >= fightcalcmin):
                             if(level >= 95 and powerpots >= 1):
                                     if(singlefight is True):
                                         self.usecommand(irc, "load power 1")
@@ -3043,6 +3047,8 @@ class PlayBotSingle(callbacks.Plugin):
         global rawstatsmode
         global otherIrc
         global netname
+        global networkname
+#        global nickname
         global nickserv
         global nickservpass
         global connectfail
@@ -3137,6 +3143,9 @@ class PlayBotSingle(callbacks.Plugin):
                         if botname in chanmsgnick and "fights with the legendary" in text and "removed from {0}".format(name) in text and "in a moment" in text:
                                 interval = 60
                                 self.looper(irc)
+                        if webworks is True and networkname != None:
+                                if botname in chanmsgnick and ", the level" in text and "is now online" in text and networkname in text and "nickname {0}".format(supynick) in text:
+                                        self.usecommand(irc, "whoami")
 
                 if(checknick == supynick and checknet == netname):
                         for entry in messagelist:
@@ -3161,10 +3170,18 @@ class PlayBotSingle(callbacks.Plugin):
                                 if remotekill is False:
                                         otherIrc.queueMsg(ircmsgs.privmsg("RussellB", "Remote Kill is Disabled"))                
                                 return
-                        if(botname == chanmsgnick and "You are {0}".format(name) in text):
-                            if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text))
-                            return
+                        if(botname == chanmsgnick and "You are" in text and "Next level in" in text):                
+                                        if pmtextmode is True:
+                                            self.reply(irc, playbottext + " - {0}".format(text))
+                                        whoamitext = text
+                                        whoamitextsplit = whoamitext.split(" ")
+                                        whoaminame = whoamitextsplit[2].strip(",")
+                                        self.reply(irc, "whoaminame {0} name {1}".format(whoaminame, name))
+                                        if(name != whoaminame):
+                                                self.reply(irc, "name {0} changed to whoaminame {1}".format(name, whoaminame))
+                                                name = whoaminame
+                                                self.singlewrite(irc)
+                                        return
                         if(botname == chanmsgnick and "{0} upgraded".format(name) in text):
                             if pmtextmode is True:
                                     self.reply(irc, playbottext + " - {0}".format(text))
@@ -3252,7 +3269,7 @@ class PlayBotSingle(callbacks.Plugin):
         global botname
         global servername
         global nolag
-        global ssl
+        global ssl1
         global port
         global netname
         global laglevel
@@ -3338,7 +3355,7 @@ class PlayBotSingle(callbacks.Plugin):
         if netcheck is False and networkreconnect is True:
                 serverPort = (servername, port)
                 newIrc = Owner._connect(netname, serverPort=serverPort,
-                                        password=password, ssl=ssl)
+                                        password=password, ssl=ssl1)
                 conf.supybot.networks().add(netname)
                 assert newIrc.callbacks is irc.callbacks, 'callbacks list is different'
                 otherIrc = self._getIrc(netname)

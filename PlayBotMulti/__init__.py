@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2018-2024, Russell Beech
+# Copyright (c) 2018-2025, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,12 +52,16 @@ __url__ = ''
 
 from . import config
 from . import plugin
-from imp import reload
-# In case we're being reloaded.
-reload(config)
-reload(plugin)
-# Add more reloads here if you add third-party modules and want them to be
-# reloaded when this plugin is reloaded.  Don't forget to import them as well!
+try:
+    from imp import reload
+    # In case we're being reloaded.
+    reload(config)
+    reload(plugin)
+### Add more reloads here if you add third-party modules and want them to be
+### reloaded when this plugin is reloaded.  Don't forget to import them as well!
+except:
+    from importlib import reload
+    reload(plugin) # In case we're being reloaded.
 
 if world.testing:
     from . import test
