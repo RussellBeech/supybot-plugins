@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2024, Russell Beech
+# Copyright (c) 2021-2025, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Quakenet #IdleRPG Playbot Script"
-__module_version__ = "1.7"
+__module_version__ = "1.8"
 __module_description__ = "Quakenet #IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -138,7 +138,8 @@ bottextmode = True # True = on, False = off
 errortextmode = True # True = on, False = off
 pmtextmode = True # True = on, False = off
 intervaltext = True # True = on, False = off - Text displayed every interval
-townworkswitch = True # True = Town/Work Area Switching, False = Town/Forest Area Switching
+townworkswitch = True # True = Town/Work Area Switching, False = Town/Forest Area Switching, None = Area Switching Off
+areasum = 6000 # Sum at which you switch to Fast Town Switching
 autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 expbuy = False
 slaysum = 1000 # minimum sum you start slaying without mana from
@@ -290,9 +291,10 @@ class QuakenetPlayBot(callbacks.Plugin):
         global gitweb
         global gitweb2
 
-        webversion = 0
-        gitversion = 0
+        webversion = None
+        gitversion = None
         newversion = 0
+
         try:
                 if python3 is False:
                         text = urllib2.urlopen(russweb + "playbotversionquakesupy.txt")
@@ -322,14 +324,22 @@ class QuakenetPlayBot(callbacks.Plugin):
         self.reply(irc, "Current version {0}".format(currentversion))
         self.reply(irc, "Web version {0}".format(webversion))
         self.reply(irc, "GitHub version {0}".format(gitversion))
-        if webversion > gitversion:
+        if webversion is None and gitversion is None:
+                self.reply(irc, "Both Websites have failed to read.  Try again later")
+                return
+        if gitversion is None and webversion != None:
                 newversion = webversion
-        if webversion < gitversion:
+        if webversion is None and gitversion != None:
                 newversion = gitversion
-        if webversion == gitversion:
-                newversion = gitversion
+        if webversion != None and gitversion != None:
+                if webversion > gitversion:
+                        newversion = webversion
+                if webversion < gitversion:
+                        newversion = gitversion
+                if webversion == gitversion:
+                        newversion = gitversion
 
-        if newversion > 0:
+        if newversion != None:
                 if(currentversion == newversion):
                         self.reply(irc, "You have the current version of PlayBot")
                 if(currentversion < newversion):
@@ -541,6 +551,10 @@ class QuakenetPlayBot(callbacks.Plugin):
                         if value is False:
                                 townworkswitch = False
                                 irc.reply("Town/Forest Switch Mode Activated.  To change to Town/Work use 'setoption townwork true' command", private=True)
+        ##              Turns Area Switching Off
+                        if value == "off" or value == "Off":
+                                townworkswitch = None
+                                irc.reply("Town/Work Switch Mode Deactivated.  To change to Town/Work use 'setoption townwork true' command", private=True)
                 if text == "townforest":
         ##              Change player area switching to town/forest
                         if value is True:
@@ -550,6 +564,10 @@ class QuakenetPlayBot(callbacks.Plugin):
                         if value is False:
                                 townworkswitch = True
                                 irc.reply("Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
+        ##              Turns Area Switching Off
+                        if value is "off" or value == "Off":
+                                townworkswitch = None
+                                irc.reply("Town/Forest Switch Mode Deactivated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
                 if text == "intervaltext":
         ##              Turns Interval Messages on
                         if value is True:
@@ -749,7 +767,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                 if playbotmulti is True:
                         playbotcount += 1
 
-        if playbotcount == 1:
+        if playbotcount <= 1:
                 playbottext = ""
         if playbotcount >= 2:
                 playbottext = playbotid
@@ -1241,6 +1259,7 @@ class QuakenetPlayBot(callbacks.Plugin):
             """
             irc.reply("PlayBot Commands List", private=True)
             irc.reply(" ", private=True)
+            irc.reply("Area Switching Mode Off     - setoption townwork off", private=True)
             irc.reply("BlackBuy Spend Mode Off     - setoption blackbuy false", private=True)
             irc.reply("BlackBuy Spend Mode On      - setoption blackbuy true", private=True)
             irc.reply("BlackBuy 14 Spend Mode Off  - setoption blackbuy14 false", private=True)
@@ -1325,6 +1344,8 @@ class QuakenetPlayBot(callbacks.Plugin):
                      irc.reply("Area Switch Mode - Town/Work", private=True)
             if townworkswitch is False:
                      irc.reply("Area Switch Mode - Town/Forest", private=True)
+            if townworkswitch is None:
+                     irc.reply("Area Switch Mode - Deactivated", private=True)
             irc.reply("BlackBuy Spend Mode - {0}      BlackBuy 14 Spend Mode - {1}".format(blackbuyspend, blackbuyspend14), private=True)
             irc.reply("Bot Text Mode - {0}            Buy Life Mode - {1}".format(bottextmode, buylife), private=True)
             irc.reply("CreepAttack Mode - {0}         Error Text Mode - {1}".format(creepattack, errortextmode), private=True)
@@ -1398,13 +1419,13 @@ class QuakenetPlayBot(callbacks.Plugin):
                                 weberror = True
                         if weberror is True:
                                 if errortextmode is True:
-                                        self.reply(irc, playbottext + " - Could not access {0}".format(website))
+                                        self.reply(irc, "{0} - Could not access {1}".format(playbottext, website))
                                 webworks2 = False
 
                         # build list for player records
                         if(playerview20 is None):
                                 if errortextmode is True:
-                                        self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                                        self.reply(irc, "{0} - Could not access {1}, unknown error.".format(playbottext, website) )
                                 webworks2 = False
                         else:
                                 playerlist20 = playerview20.split("\n")
@@ -1612,7 +1633,7 @@ class QuakenetPlayBot(callbacks.Plugin):
         if newlistererror is True:
                 webworks = False
                 if errortextmode is True:
-                        self.reply(irc, playbottext + " - Newlister Error")
+                        self.reply(irc, "{0} - Newlister Error".format(playbottext))
 
         newlist.sort( key=operator.itemgetter(1), reverse=True )
         newlist.sort( key=operator.itemgetter(3) )
@@ -1762,20 +1783,20 @@ class QuakenetPlayBot(callbacks.Plugin):
 
             if weberror is True:
                 if errortextmode is True:
-                        self.reply(irc, playbottext + " - Could not access {0}".format(website))
+                        self.reply(irc, "{0} - Could not access {1}".format(playbottext, website))
                 webworks = False
 
             # build list for player records
             if(playerview is None):
                     if errortextmode is True:
-                            self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                            self.reply(irc, "{0} - Could not access {1}, unknown error.".format(playbottext, website) )
                     webworks = False
             else:
                     playerlist = playerview.split("\n")
                     playerlist = playerlist[:-1]
             if(playerspage is None):
                     if errortextmode is True:
-                            self.reply(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                            self.reply(irc, "{0} - Could not access {1}, unknown error.".format(playbottext, website) )
                     webworks = False
             else:
                     playerspagelist = playerspage.split("\n")
@@ -1787,11 +1808,14 @@ class QuakenetPlayBot(callbacks.Plugin):
         global location
         global locationtime
         global townworkswitch
+        global areasum
         
         if townworkswitch is True:
                 area = "work"
         if townworkswitch is False:
                 area = "forest"
+        if townworkswitch is None:
+                return
 
 #        self.reply(irc, "{0} Time: {1} seconds".format(location, locationtime))
         if (level <= 25):
@@ -1806,9 +1830,9 @@ class QuakenetPlayBot(callbacks.Plugin):
         if locationtime == 0:
                 self.usecommand(irc, "goto {0}".format(area))
                 
-        if(location == "In Town" and locationtime >= mintime and mysum < 6000 and mysum != 0):
+        if(location == "In Town" and locationtime >= mintime and mysum < areasum and mysum != 0):
                 self.usecommand(irc, "goto {0}".format(area))
-        if(location == "In Town" and mysum >= 6000):
+        if(location == "In Town" and mysum >= areasum):
                 self.usecommand(irc, "goto {0}".format(area))
         if(location == "At Work" and locationtime >= mintime):
                 self.usecommand(irc, "goto town")
@@ -2183,7 +2207,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                 except:
                         webworks = False
                         if errortextmode is True:
-                                self.reply(irc, playbottext + " - Variable Error")
+                                self.reply(irc, "{0} - Variable Error".format(playbottext))
 
     def timetosecs(self, days, timetext):
         timesecs = 0
@@ -2205,7 +2229,7 @@ class QuakenetPlayBot(callbacks.Plugin):
             global gold
             global life
             global slaysum
-            global playbotext
+            global playbottext
             global bottextmode
             
             # make sure no times are negative
@@ -2230,7 +2254,7 @@ class QuakenetPlayBot(callbacks.Plugin):
             if(ttl <= interval and ttl > 0):
                     timer = time.time() + (ttl+10)
                     if bottextmode is True:
-                            self.reply(irc, playbottext + " - Set lvlup timer. Going off in {0} minutes.".format(ttl // 60))
+                            self.reply(irc, "{0} - Set lvlup timer. Going off in {1} minutes.".format(playbottext, ttl // 60))
                     try:
                         schedule.addEvent(lvlupgoqs, timer, "lvlupqs")
                     except AssertionError:
@@ -2239,7 +2263,7 @@ class QuakenetPlayBot(callbacks.Plugin):
             if(level >= 15 and atime <= interval and atime <= ttl and life > 10):
                     timer = time.time() + (atime+10)
                     if bottextmode is True:
-                            self.reply(irc, playbottext + " - Set attack timer. Going off in {0} minutes.".format(atime // 60))
+                            self.reply(irc, "{0} - Set attack timer. Going off in {1} minutes.".format(playbottext, atime // 60))
                     slaydisable = True
                     try:
                         schedule.addEvent(attackgoqs, timer, "attackqs")
@@ -2254,7 +2278,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                     timer = time.time() + (stime+10)
                     if mana == 0 and attackslaySum >= slaysum:
                             if bottextmode is True:
-                                    self.reply(irc, playbottext + " - Set slay timer. Going off in {0} minutes.".format(stime // 60))
+                                    self.reply(irc, "{0} - Set slay timer. Going off in {1} minutes.".format(playbottext, stime // 60))
                             try:
                                 schedule.addEvent(slaygoqs, timer, "slayqs")
                             except AssertionError:
@@ -2262,7 +2286,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                                 schedule.addEvent(slaygoqs, timer, "slayqs")
                     if mana == 1:
                             if bottextmode is True:
-                                    self.reply(irc, playbottext + " - Set slay timer. Going off in {0} minutes.".format(stime // 60))
+                                    self.reply(irc, "{0} - Set slay timer. Going off in {1} minutes.".format(playbottext, stime // 60))
                             mana = 0
                             try:
                                 schedule.addEvent(slaygobqs, timer, "slayqs")
@@ -2578,7 +2602,7 @@ class QuakenetPlayBot(callbacks.Plugin):
             level += 1
 
             if bottextmode is True:
-                    self.reply(irc, playbottext + " - {0} has reached level {1}!".format(name, level))
+                    self.reply(irc, "{0} - {1} has reached level {2}!".format(playbottext, name, level))
 
             interval = 60
             self.looper(irc)
@@ -2636,7 +2660,7 @@ class QuakenetPlayBot(callbacks.Plugin):
 
             if(level >= 25):
                 if bottextmode is True:
-                        self.reply(irc, playbottext + " - Best fight for Rank {0}:  {1}  [{2}]  Opponent: Rank {3}:  {4}  [{5}], Odds {6}".format(rank, name, int(fightAdj), ufight[6], ufight[0], int(ufight[2]), ufightcalc))
+                        self.reply(irc, "{0} - Best fight for Rank {1}:  {2}  [{3}]  Opponent: Rank {4}:  {5}  [{6}], Odds {7}".format(playbottext, rank, name, int(fightAdj), ufight[6], ufight[0], int(ufight[2]), ufightcalc))
                 if(ufightcalc >= 0.9 and fightmode is True):
                         self.usecommand(irc, "fight {0}".format( ufight[0] ))
                         fights += 1
@@ -2860,7 +2884,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                 if(checknick == supynick and checknet == netname):
                         if(botname == chanmsgnick and "You are not logged in." in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text))
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text))
                             self.usecommand(irc, "login {0} {1}".format(name, pswd) )
                             interval = 60
                             self.looper(irc)
@@ -2868,7 +2892,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                         for entry in messagelist:
                             if(botname == chanmsgnick and entry[0] in text):
                                 if pmtextmode is True:
-                                        self.reply(irc, playbottext + " - {0}".format(text))
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text))
                                 return
                         for entry in messagelist2:
                             if(botname == chanmsgnick and entry[0] in text):
@@ -2876,7 +2900,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                                 return
                         if(botname == chanmsgnick and "You are {0}".format(name) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text))
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text))
                             return
         return msg
 
@@ -2933,7 +2957,7 @@ class QuakenetPlayBot(callbacks.Plugin):
         
         self.playbotcheck(irc)
         if intervaltext is True:
-                self.reply(irc, playbottext + " - INTERVAL {0}".format(time.asctime()) )
+                self.reply(irc, "{0} - INTERVAL {1}".format(playbottext, time.asctime()) )
 
         botcheck = False
         chancheck = False
@@ -2947,10 +2971,10 @@ class QuakenetPlayBot(callbacks.Plugin):
                 checkotherIrc = self._getIrc(netname)
                 if checkotherIrc.server == "unset":
                         if errortextmode is True:
-                                self.reply(irc, playbottext + " - Server Error")
+                                self.reply(irc, "{0} - Server Error".format(playbottext))
         except NameError:
                 if errortextmode is True:
-                        self.reply(irc, playbottext + " - Network not connected to supybot")
+                        self.reply(irc, "{0} - Network not connected to supybot".format(playbottext))
                 netcheck = False
 
         chantest = otherIrc.state.channels
@@ -2970,10 +2994,10 @@ class QuakenetPlayBot(callbacks.Plugin):
                         botcheck = True
                 if botcheck is False:
                         if errortextmode is True:
-                            self.reply(irc, playbottext + " - Game Bot not in channel")
+                            self.reply(irc, "{0} - Game Bot not in channel".format(playbottext))
             except KeyError:
                 if errortextmode is True:
-                        self.reply(irc, playbottext + " - Game Bot not in channel")
+                        self.reply(irc, "{0} - Game Bot not in channel".format(playbottext))
 
         if botcheck is True:
                 self.webdata(irc)
@@ -2999,7 +3023,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                                 offline = True
         if(webworks is True and offline is True):
                 if errortextmode is True:
-                        self.reply(irc, playbottext + " - Player Offline")
+                        self.reply(irc, "{0} - Player Offline".format(playbottext))
 
         if webworks is True and offline is True and botcheck is True:
                 if netcheck is True:
@@ -3020,7 +3044,7 @@ class QuakenetPlayBot(callbacks.Plugin):
                 self.timercheck(irc)
                 if(level >= 25 and fights >= 0 and fights < 5 and life > 0):
                         if bottextmode is True:
-                                self.reply(irc, playbottext + " - Fights available")
+                                self.reply(irc, "{0} - Fights available".format(playbottext))
                 if(level >= 25 and fights >= 0 and fights < 5 and life > 10):
                         self.newlister(irc)
                         self.fight_fight(irc)
@@ -3058,13 +3082,19 @@ class QuakenetPlayBot(callbacks.Plugin):
         nextTime = time.time() + interval
         
         if intervaltext is True:
-                self.reply(irc, playbottext + " - Checking timers every {0} minutes".format(interval // 60))
+                self.reply(irc, "{0} - Checking timers every {1} minutes".format(playbottext, interval // 60))
         if gameactive is True:
             try:
                 schedule.addEvent(loopqs, nextTime, "loopqs")
             except AssertionError:
                 schedule.removeEvent('loopqs')
                 schedule.addEvent(loopqs, nextTime, "loopqs")        
+
+    def die(self):
+        try:
+                schedule.removeEvent('loopqs')
+        except:
+                return
 
 Class = QuakenetPlayBot
 
