@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2025, Russell Beech
+# Copyright (c) 2021-2026, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
 from supybot.test import *
 
 
-class MultiGamePlayBotTestCase(PluginTestCase):
-    plugins = ('MultiGamePlayBot',)
+class AbandonedPlayBotTestCase(PluginTestCase):
+    plugins = ('AbandonedPlayBot',)
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2025, Russell Beech
+# Copyright (c) 2021-2026, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Quakenet #IdleRPG Playbot Script"
-__module_version__ = "1.8"
+__module_version__ = "2.0"
 __module_description__ = "Quakenet #IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -106,6 +106,7 @@ monsters = [    ["Blue_Dragon",         8500],  \
 creeps.reverse()
 monsters.reverse()
 
+website = "https://quakeirpg.abandoned-irc.net"
 russweb = "http://russellb.x10.mx/"
 gitweb = "https://github.com/RussellBeech/supybot-plugins"
 gitweb2 = "https://raw.githubusercontent.com/RussellBeech/supybot-plugins/master/"
@@ -132,7 +133,6 @@ currentversion = __module_version__
 currentversion = float( currentversion )
 
 # Changeable settings
-website = "https://quakeirpg.abandoned-irc.net"
 setbuy = 15 # level to start buying items from
 goldsave = 3100 # gold kept in hand
 buylife = True
@@ -141,7 +141,7 @@ blackbuyspend14 = True
 getgems = True
 fightmode = True
 channame = "#idlerpg"
-setbotname = "IdleRPG"
+botname = "IdleRPG"
 creepattack = True # True = On, False = Off - Autocreep selection
 setcreeptarget = "Werewolf" # Sets creep target. creepattack needs to be False to use
 scrollssum = 3000 # Itemscore you start buying scrolls at
@@ -153,8 +153,8 @@ pmtextmode = True # True = on, False = off
 intervaltext = True # True = on, False = off - Text displayed every interval
 townworkswitch = True # True = Town/Work Area Switching, False = Town/Forest Area Switching, None = Area Switching Off
 areasum = 6000 # Sum at which you switch to Fast Town Switching
-autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 expbuy = False
+autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 slaysum = 1000 # minimum sum you start slaying without mana from
 loginsettingslist = True # True = on, False = off - Settings List at start
 disableqplayerslistcommand = False # True = on, False = off - You can disable the qplayerslist command if there are multiple of them when running both single and multi together
@@ -172,7 +172,6 @@ char1 = False
 char2 = False
 char3 = False
 char4 = False
-botname = setbotname 
 charcount = 0
 level = 0
 mysum = 0
@@ -278,6 +277,11 @@ botdisable1 = False
 botdisable2 = False
 botdisable3 = False
 botdisable4 = False
+Owner = None
+Owner2 = None
+Owner3 = None
+Owner4 = None
+autostartmode = False
 playbotcount = 0
 playbottext = None
 playbotid = "QM"
@@ -295,6 +299,15 @@ try:
         f.close()
 except:
         configList = []
+fileprefix2 = "autostartmulticonfigquake.txt"
+path = conf.supybot.directories.data
+filename2 = path.dirize(fileprefix2)
+try:
+        f = open(filename2,"rb")
+        autoconfigList = pickle.load(f)
+        f.close()
+except:
+        autoconfigList = []
 fileprefix3 = "quakesingleplayers.txt"
 path = conf.supybot.directories.data
 filename3 = path.dirize(fileprefix3)
@@ -303,6 +316,8 @@ path = conf.supybot.directories.data
 filename4 = path.dirize(fileprefix4)
 
 for entry in configList:
+        if(entry[0] == "autostartmode"):
+                autostartmode = entry[1]
         if(entry[0] == "blackbuyspend"):
                 blackbuyspend = entry[1]
         if(entry[0] == "blackbuyspend14"):
@@ -363,11 +378,13 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         webversion = None
         gitversion = None
         newversion = 0
+        versionfilename = "playbotversionquakesupy.txt"
+
         try:
                 if python3 is False:
-                        text = urllib2.urlopen(russweb + "playbotversionquakesupy.txt")
+                        text = urllib2.urlopen(russweb + versionfilename)
                 if python3 is True:
-                        text = urllib.request.urlopen(russweb + "playbotversionquakesupy.txt")
+                        text = urllib.request.urlopen(russweb + versionfilename)
                 webversion = text.read()
                 webversion = float( webversion )
                 text.close()
@@ -376,10 +393,11 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 self.replymulti(irc, "Could not access {0}".format(russweb))
 
         try:
+                context = ssl._create_unverified_context()
                 if python3 is False:
-                        text2 = urllib2.urlopen(gitweb2 + "playbotversionquakesupy.txt")
+                        text2 = urllib2.urlopen(gitweb2 + versionfilename, context=context)
                 if python3 is True:
-                        text2 = urllib.request.urlopen(gitweb2 + "playbotversionquakesupy.txt")
+                        text2 = urllib.request.urlopen(gitweb2 + versionfilename, context=context)
                 gitversion = text2.read()
                 text2.close()
                 if python3 is True:
@@ -417,6 +435,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                         self.replymulti(irc, "Give me, Give me")
 
     def configwrite(self):
+        global autostartmode
         global blackbuyspend
         global blackbuyspend14
         global buylife
@@ -438,6 +457,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global pmtextmode
 
         configList = []
+        configList.append( ( "autostartmode", autostartmode ) )
         configList.append( ( "blackbuyspend", blackbuyspend ) )
         configList.append( ( "blackbuyspend14", blackbuyspend14 ) )
         configList.append( ( "bottextmode", bottextmode ) )
@@ -461,6 +481,53 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         pickle.dump(configList,f)
         f.close()
 
+    def configwrite2(self):
+        global name
+        global pswd
+        global nickname
+        global netname
+        global name2
+        global pswd2
+        global nickname2
+        global netname2
+        global name3
+        global pswd3
+        global nickname3
+        global netname3
+        global name4
+        global pswd4
+        global nickname4
+        global netname4
+        global supynick
+        global supynick2
+        global supynick3
+        global supynick4
+
+        autoconfigList = []
+        autoconfigList.append( ( "name", name ) )
+        autoconfigList.append( ( "pswd", pswd ) )
+        autoconfigList.append( ( "nickname", nickname ) )
+        autoconfigList.append( ( "netname", netname ) )
+        autoconfigList.append( ( "name2", name2 ) )
+        autoconfigList.append( ( "pswd2", pswd2 ) )
+        autoconfigList.append( ( "nickname2", nickname2 ) )
+        autoconfigList.append( ( "netname2", netname2 ) )
+        autoconfigList.append( ( "name3", name3 ) )
+        autoconfigList.append( ( "pswd3", pswd3 ) )
+        autoconfigList.append( ( "nickname3", nickname3 ) )
+        autoconfigList.append( ( "netname3", netname3 ) )
+        autoconfigList.append( ( "name4", name4 ) )
+        autoconfigList.append( ( "pswd4", pswd4 ) )
+        autoconfigList.append( ( "nickname4", nickname4 ) )
+        autoconfigList.append( ( "netname4", netname4 ) )
+        autoconfigList.append( ( "supynick", supynick ) )
+        autoconfigList.append( ( "supynick2", supynick2 ) )
+        autoconfigList.append( ( "supynick3", supynick3 ) )
+        autoconfigList.append( ( "supynick4", supynick4 ) )
+        f = open(filename2,"wb")
+        pickle.dump(autoconfigList,f)
+        f.close()
+
     def eraseconfig(self, irc, msg, args):
         """takes no arguments
 
@@ -469,6 +536,10 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         configList = []
         f = open(filename,"wb")
         pickle.dump(configList,f)
+        f.close()
+        autoconfigList = []
+        f = open(filename2,"wb")
+        pickle.dump(autoconfigList,f)
         f.close()
         irc.reply("Config Erased", private=True)
     eraseconfig = wrap(eraseconfig, [("checkCapability", "admin")])
@@ -499,6 +570,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global bottextmode
         global errortextmode
         global pmtextmode
+        global autostartmode
         
         if value.lower()=='true':
             value=True
@@ -633,7 +705,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                 townworkswitch = True
                                 irc.reply("Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
         ##              Turns Area Switching Off
-                        if value is "off" or value == "Off":
+                        if value == "off" or value == "Off":
                                 townworkswitch = None
                                 irc.reply("Town/Forest Switch Mode Deactivated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
                 if text == "intervaltext":
@@ -681,6 +753,20 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                         if value is False:
                                 pmtextmode = False
                                 irc.reply("Turns PMs from GameBot off.  To turn it back on use 'setoption pmtext true' command", private=True)
+                if text == "autostart":
+        ##              Turns Autostart Mode on
+                        if value is True:
+                                autostartmode = True
+                                self.configwrite2()
+                                irc.reply("Autostart Mode on.  To turn it back off use 'setoption autostart false' command", private=True)
+        ##              Turns Autostart Mode off
+                        if value is False:
+                                autostartmode = False
+                                autoconfigList = []
+                                f = open(filename2,"wb")
+                                pickle.dump(autoconfigList,f)
+                                f.close()
+                                irc.reply("Autostart Mode off  To turn it back on use 'setoption autostart true' command", private=True)
 
                 self.configwrite()
         if gameactive is False:
@@ -703,13 +789,11 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global char2
         global char3
         global char4
-        global setbotname
         
         botcount1 = 0
         botcount2 = 0
         botcount3 = 0
         botcount4 = 0
-        botname = setbotname
 
         if num == 1 and char1 is True:
                 bottest = botname
@@ -916,16 +1000,14 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         pbcount = 0
         quakeon = True
         quakemultion = True
-        multigameon = True
-        multigamemultion = True
-        multigamemultimultion = True
+        abandonedon = True
+        abandonedmultion = True
         playbotsingleon = True
         playbotmultion = True
         quake = False
         quakemulti = False
-        multigame = False
-        multigamemulti = False
-        multigamemultimulti = False
+        abandoned = False
+        abandonedmulti = False
         playbotsingle = False
         playbotmulti = False
         
@@ -938,17 +1020,13 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         except:
                 quakemultion = False
         try:
-                multigamecheck = conf.supybot.plugins.get("MultiGamePlayBot")
+                abandonedcheck = conf.supybot.plugins.get("AbandonedPlayBot")
         except:
-                multigameon = False
+                abandonedon = False
         try:
-                multigamemulticheck = conf.supybot.plugins.get("MultiGamePlayBotMulti")
+                abandonedmulticheck = conf.supybot.plugins.get("AbandonedPlayBotMulti")
         except:
-                multigamemultion = False
-        try:
-                multigamemultimulticheck = conf.supybot.plugins.get("MultiGamePlayBotMultiMulti")
-        except:
-                multigamemultimultion = False
+                abandonedmultion = False
         try:
                 playbotsinglecheck = conf.supybot.plugins.get("PlayBotSingle")
         except:
@@ -970,20 +1048,16 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                         playbotcount += 1
                         pbcount += 1
 
-        if multigameon is True:
-                multigame = conf.supybot.plugins.MultiGamePlayBot()
-                if multigame is True:
+        if abandonedon is True:
+                abandoned = conf.supybot.plugins.AbandonedPlayBot()
+                if abandoned is True:
                         playbotcount += 1
 
-        if multigamemultion is True:
-                multigamemulti = conf.supybot.plugins.MultiGamePlayBotMulti()
-                if multigamemulti is True:
+        if abandonedmultion is True:
+                abandonedmulti = conf.supybot.plugins.AbandonedPlayBotMulti()
+                if abandonedmulti is True:
                         playbotcount += 1
 
-        if multigamemultimultion is True:
-                multigamemultimulti = conf.supybot.plugins.MultiGamePlayBotMultiMulti()       
-                if multigamemultimulti is True:
-                        playbotcount += 1
         if playbotsingleon is True:
                 playbotsingle = conf.supybot.plugins.PlayBotSingle()       
                 if playbotsingle is True:
@@ -998,6 +1072,220 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         if playbotcount >= 2:
                 playbottext = playbotid
 
+    def autostart(self, irc):
+        global name
+        global pswd
+        global name2
+        global pswd2
+        global name3
+        global pswd3
+        global name4
+        global pswd4
+        global netname
+        global nickname
+        global netname2
+        global nickname2
+        global netname3
+        global nickname3
+        global netname4
+        global nickname4
+        global gameactive
+        global char1
+        global char2
+        global char3
+        global char4
+        global charcount
+        global otherIrc
+        global supynick
+        global otherIrc2
+        global supynick2
+        global otherIrc3
+        global supynick3
+        global otherIrc4
+        global supynick4
+        global playerspagelist
+        global webworks
+        global pbcount
+        global Owner
+        global Owner2
+        global Owner3
+        global Owner4
+        global autostartmode
+
+        for entry in autoconfigList:
+                if(entry[0] == "name"):
+                        name = entry[1]
+                if(entry[0] == "pswd"):
+                        pswd = entry[1]
+                if(entry[0] == "nickname"):
+                        nickname = entry[1]
+                if(entry[0] == "netname"):
+                        netname = entry[1]
+                if(entry[0] == "name2"):
+                        name2 = entry[1]
+                if(entry[0] == "pswd2"):
+                        pswd2 = entry[1]
+                if(entry[0] == "nickname2"):
+                        nickname2 = entry[1]
+                if(entry[0] == "netname2"):
+                        netname2 = entry[1]
+                if(entry[0] == "name3"):
+                        name3 = entry[1]
+                if(entry[0] == "pswd3"):
+                        pswd3 = entry[1]
+                if(entry[0] == "nickname3"):
+                        nickname3 = entry[1]
+                if(entry[0] == "netname3"):
+                        netname3 = entry[1]
+                if(entry[0] == "name4"):
+                        name4 = entry[1]
+                if(entry[0] == "pswd4"):
+                        pswd4 = entry[1]
+                if(entry[0] == "nickname4"):
+                        nickname4 = entry[1]
+                if(entry[0] == "netname4"):
+                        netname4 = entry[1]
+
+        if name != None and pswd != None:
+                char1 = True
+        if name2 != None and pswd2 != None:
+                char2 = True
+        if name3 != None and pswd3 != None:
+                char3 = True
+        if name4 != None and pswd4 != None:
+                char4 = True
+
+        bootdelay1 = False
+        bootdelay2 = False
+        bootdelay3 = False
+        bootdelay4 = False
+        if char1 is True:
+                try:
+                        checkotherIrc = self._getIrc(netname)
+                        if checkotherIrc.server == "unset":
+                                bootdelay1 = True
+                                char1 = False 
+                except NameError:
+                        bootdelay1 = True
+                        char1 = False 
+        if char2 is True:
+                try:
+                        checkotherIrc2 = self._getIrc(netname2)
+                        if checkotherIrc2.server == "unset":
+                                bootdelay2 = True
+                                char2 = False 
+                except NameError:
+                        bootdelay2 = True
+                        char2 = False 
+        if char3 is True:
+                try:
+                        checkotherIrc3 = self._getIrc(netname3)
+                        if checkotherIrc3.server == "unset":
+                                bootdelay3 = True
+                                char3 = False 
+                except NameError:
+                        bootdelay3 = True
+                        char3 = False 
+        if char4 is True:
+                try:
+                        checkotherIrc4 = self._getIrc(netname4)
+                        if checkotherIrc4.server == "unset":
+                                bootdelay4 = True
+                                char4 = False 
+                except NameError:
+                        bootdelay4 = True
+                        char4 = False 
+
+        if bootdelay1 is True or bootdelay2 is True or bootdelay3 is True or bootdelay4 is True:
+                def bootloopqm():
+                    self.autostart(irc)
+                delayTime = time.time() + 60
+                
+                try:
+                        schedule.addEvent(bootloopqm, delayTime, "bootloopqm")
+                except AssertionError:
+                        schedule.removeEvent('bootloopqm')
+                        schedule.addEvent(bootloopqm, delayTime, "bootloopqm")
+                return
+
+        if char1 is False and char2 is False and char3 is False and char4 is False:
+                charcount = 0
+                gameactive = False
+                irc.error("Autostart Failed")
+                autostartmode = False
+                self.configwrite()
+
+        if char1 is True:
+                gameactive = True
+                irc = world.getIrc(netname)
+                supynick = irc.nick
+                Owner = irc.getCallback('Owner')
+                otherIrc = self._getIrc(netname)
+
+                if(name != None and pswd != None):
+                        self.usecommand(irc, "login {0} {1}".format(name, pswd), 1 )
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 1)
+                        self.reply(irc, "Player Character 1 has logged in", 1)                
+
+        if char2 is True:
+                irc = world.getIrc(netname2)
+                supynick2 = irc.nick
+                Owner2 = irc.getCallback('Owner')
+                otherIrc2 = self._getIrc(netname2)
+
+                if(name2 != None and pswd2 != None):
+                        self.usecommand(irc, "login {0} {1}".format(name2, pswd2), 2)
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 2)
+                        self.reply(irc, "Player Character 2 has logged in", 2)                
+
+        if char3 is True:
+                irc = world.getIrc(netname3)
+                supynick3 = irc.nick
+                Owner3 = irc.getCallback('Owner')
+                otherIrc3 = self._getIrc(netname3)
+
+                if(name3 != None and pswd3 != None):
+                        self.usecommand(irc, "login {0} {1}".format(name3, pswd3), 3)
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 3)
+                        self.reply(irc, "Player Character 3 has logged in", 3)                
+
+        if char4 is True:
+                irc = world.getIrc(netname4)
+                supynick4 = irc.nick
+                Owner4 = irc.getCallback('Owner')
+                otherIrc4 = self._getIrc(netname4)
+
+                if(name4 != None and pswd4 != None):
+                        self.usecommand(irc, "login {0} {1}".format(name4, pswd4), 4)
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 4)
+                        self.reply(irc, "Player Character 4 has logged in", 4)                
+
+        if (charcount >= 1 and charcount <= 4):        
+                self.loginstart(irc)
+                self.webdata(irc)
+                self.configcheck(irc)
+                self.multiwrite(irc)
+                if webworks is True:
+                        self.itemsbuilder(irc)
+                if char1 is True and webworks is True:
+                        self.newlister(irc, 1)
+                if char2 is True and webworks is True:
+                        self.newlister(irc, 2)
+                if char3 is True and webworks is True:
+                        self.newlister(irc, 3)
+                if char4 is True and webworks is True:
+                        self.newlister(irc, 4)
+
+                self.main(irc)
+
     def login(self, irc, msg, args, arg2):
         """<charname> <password>
 
@@ -1011,8 +1299,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global pswd3
         global name4
         global pswd4
-        global setbuy
-        global buylife
         global netname
         global nickname
         global netname2
@@ -1022,7 +1308,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global netname4
         global nickname4
         global gameactive
-        global fightmode
         global charcount
         global otherIrc
         global supynick
@@ -1036,26 +1321,14 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global char2
         global char3
         global char4
-        global blackbuyspend
-        global blackbuyspend14
-        global getgems
-        global scrollssum
-        global xpupgrade
-        global xpspend
-        global intervaltext
-        global townworkswitch
-        global goldsave
-        global creepattack
-        global expbuy
         global playerspagelist
         global webworks
-        global channame
-        global slaysum
         global pbcount
-        global loginsettingslist
-        global bottextmode
-        global errortextmode
-        global pmtextmode
+        global Owner
+        global Owner2
+        global Owner3
+        global Owner4
+        global autostartmode
 
         charcount += 1
 
@@ -1066,23 +1339,30 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 supynick = irc.nick
                 otherIrc = self._getIrc(netname)
                 namecheck = False
+                Owner = irc.getCallback('Owner')
 
-                if "undernet" in netname and channame.lower() == "#irpg":
+                if "undernet" in netname.lower():
                         irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-
-                try:
-                        if(name is None or pswd is None):
-                                name = args2[0]
-                                pswd = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
-                        
-                self.webdata(irc)
-                if(name is None or pswd is None):
                         charcount = 0
-                        irc.error("Login Failed")
+                if "abandoned" in netname.lower():
+                        irc.error("You need to use the Abandoned-IRC version of PlayBot")
+                        charcount = 0
+
+                if charcount == 1:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+
+                        try:
+                                if(name is None or pswd is None):
+                                        name = args2[0]
+                                        pswd = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
+                                
+                        self.webdata(irc)
+                        if(name is None or pswd is None):
+                                charcount = 0
+                                irc.error("Login Failed")
                 if charcount == 1:
                         try:
                                 for entry in playerspagelist:
@@ -1095,7 +1375,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                 charcount = 0
 
                 if charcount == 1:
-                        if pbcount == 2:
+                        if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
@@ -1123,23 +1403,30 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 supynick2 = irc.nick
                 otherIrc2 = self._getIrc(netname2)
                 namecheck2 = False
+                Owner2 = irc.getCallback('Owner')
 
-                if "undernet" in netname2 and channame.lower() == "#irpg":
+                if "undernet" in netname2.lower():
                         irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-
-                try:
-                        if(name2 is None or pswd2 is None):
-                                name2 = args2[0]
-                                pswd2 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
-                        
-                self.webdata(irc)
-                if(name2 is None or pswd2 is None):
                         charcount = 1
-                        irc.error("Login Failed")
+                if "abandoned" in netname2.lower():
+                        irc.error("You need to use the Abandoned-IRC version of PlayBot")
+                        charcount = 1
+
+                if charcount == 2:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+
+                        try:
+                                if(name2 is None or pswd2 is None):
+                                        name2 = args2[0]
+                                        pswd2 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
+                                
+                        self.webdata(irc)
+                        if(name2 is None or pswd2 is None):
+                                charcount = 1
+                                irc.error("Login Failed")
                 if charcount == 2:
                         try:
                                 for entry in playerspagelist:
@@ -1151,7 +1438,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                 irc.error("LOGIN ERROR: {0} does not exist".format(name2))
                                 charcount = 1
                 if charcount == 2:
-                        if pbcount == 2:
+                        if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
@@ -1172,6 +1459,8 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                 if name2 != name:
                                         char2 = True
                                         self.usecommand(irc, "login {0} {1}".format(name2, pswd2), 2 )
+                                        if autostartmode is True:
+                                            self.configwrite2()
                                 if name2 == name:
                                         charcount = 1
                                         irc.error("Character {0} is already logged in".format(name))
@@ -1191,23 +1480,30 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 supynick3 = irc.nick
                 otherIrc3 = self._getIrc(netname3)
                 namecheck3 = False
+                Owner3 = irc.getCallback('Owner')
 
-                if "undernet" in netname3 and channame.lower() == "#irpg":
+                if "undernet" in netname3.lower():
                         irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-
-                try:
-                        if(name3 is None or pswd3 is None):
-                                name3 = args2[0]
-                                pswd3 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
-                        
-                self.webdata(irc)
-                if(name3 is None or pswd3 is None):
                         charcount = 2
-                        irc.error("Login Failed")
+                if "abandoned" in netname3.lower():
+                        irc.error("You need to use the Abandoned-IRC version of PlayBot")
+                        charcount = 2
+
+                if charcount == 3:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+
+                        try:
+                                if(name3 is None or pswd3 is None):
+                                        name3 = args2[0]
+                                        pswd3 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
+                                
+                        self.webdata(irc)
+                        if(name3 is None or pswd3 is None):
+                                charcount = 2
+                                irc.error("Login Failed")
                 if charcount == 3:
                         try:
                                 for entry in playerspagelist:
@@ -1219,7 +1515,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                 irc.error("LOGIN ERROR: {0} does not exist".format(name3))
                                 charcount = 2
                 if charcount == 3:
-                        if pbcount == 2:
+                        if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
@@ -1236,6 +1532,8 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                         if(supynick3 != supynick and name3 != name and supynick3 != supynick2 and name3 != name2):
                                 char3 = True
                                 self.usecommand(irc, "login {0} {1}".format(name3, pswd3), 3 )
+                                if autostartmode is True:
+                                    self.configwrite2()
                         if(supynick3 == supynick or name3 == name):
                                 charcount = 2
                                 irc.error("Character {0} is already logged in".format(name))
@@ -1258,23 +1556,30 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 supynick4 = irc.nick
                 otherIrc4 = self._getIrc(netname4)
                 namecheck4 = False
+                Owner4 = irc.getCallback('Owner')
 
-                if "undernet" in netname4 and channame.lower() == "#irpg":
+                if "undernet" in netname4.lower():
                         irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-
-                try:
-                        if(name4 is None or pswd4 is None):
-                                name4 = args2[0]
-                                pswd4 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
-                        
-                self.webdata(irc)
-                if(name4 is None or pswd4 is None):
                         charcount = 3
-                        irc.error("Login Failed")
+                if "abandoned" in netname4.lower():
+                        irc.error("You need to use the Abandoned-IRC version of PlayBot")
+                        charcount = 3
+
+                if charcount == 4:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+
+                        try:
+                                if(name4 is None or pswd4 is None):
+                                        name4 = args2[0]
+                                        pswd4 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> quakenetplaybotmulti login CharName Password" )
+                                
+                        self.webdata(irc)
+                        if(name4 is None or pswd4 is None):
+                                charcount = 3
+                                irc.error("Login Failed")
                 if charcount == 4:
                         try:
                                 for entry in playerspagelist:
@@ -1286,7 +1591,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                 irc.error("LOGIN ERROR: {0} does not exist".format(name4))
                                 charcount = 3
                 if charcount == 4:
-                        if pbcount == 2:
+                        if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
@@ -1303,6 +1608,8 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                         if(supynick4 != supynick and name4 != name and supynick4 != supynick2 and name4 != name2 and supynick4 != supynick3 and name4 != name3):
                                 char4 = True
                                 self.usecommand(irc, "login {0} {1}".format(name4, pswd4), 4 )
+                                if autostartmode is True:
+                                    self.configwrite2()
                         if(supynick4 == supynick or name4 == name):
                                 charcount = 3
                                 irc.error("Character {0} is already logged in".format(name))
@@ -1328,61 +1635,8 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 time.sleep(3) # Needed
                 self.usecommand(irc, "whoami", charcount)
                 irc.reply("Player Character {0} has logged in".format(charcount), private=True)
-        if charcount == 1 and loginsettingslist is True:
-                if blackbuyspend is True:
-                        irc.reply("BlackBuy Spend Mode Activated.  To turn it off use 'setoption blackbuy false' command", private=True)
-                if blackbuyspend is False:
-                        irc.reply("BlackBuy Spend Mode Deactivated.  To turn it off use 'setoption blackbuy true' command", private=True)
-                if blackbuyspend14 is True:
-                        irc.reply("BlackBuy Spend 14 Mode Activated.  To turn it off use 'setoption blackbuy14 false' command", private=True)
-                if blackbuyspend14 is False:
-                        irc.reply("BlackBuy Spend 14 Mode Deactivated.  To turn it off use 'setoption blackbuy14 true' command", private=True)
-                if bottextmode is True:
-                        irc.reply("Bot Text Mode Activated.  To turn it off use 'setoption bottext false' command", private=True)
-                if buylife is True:
-                        irc.reply("Buy Life Mode Activated.  To turn it off use 'setoption buylife false' command", private=True)
-                if buylife is False:
-                        irc.reply("Buy Life Mode Deactivated.  To turn it on use 'setoption buylife true' command", private=True)
-                if creepattack is True:
-                        irc.reply("CreepAttack Mode Activated.  To turn it off use 'setoption creepattack false' command", private=True)
-                if creepattack is False:
-                        irc.reply("CreepAttack Mode Deactivated.  To turn it on use 'setoption creepattack true' command", private=True)
-                if errortextmode is True:
-                        irc.reply("Error Text Mode Activated.  To turn it off use 'setoption errortext false' command", private=True)
-                if expbuy is True:
-                        irc.reply("Experience Buying Mode Activated.  To turn it off use 'setoption expbuy false' command", private=True)
-                if expbuy is False:
-                        irc.reply("Experience Buying Mode Deactivated.  To turn it on use 'setoption expbuy true' command", private=True)
-                if fightmode is True:
-                        irc.reply("Fighting Mode Activated.  To turn it off use 'setoption fights false' command", private=True)
-                if fightmode is False:
-                        irc.reply("Fighting Mode Deactivated.  To turn it on use 'setoption fights true' command", private=True)
-                if getgems is True:
-                        irc.reply("GetGems Mode Activated.  To turn it off use 'setoption getgems false' command", private=True)
-                if getgems is False:
-                        irc.reply("GetGems Mode Deactivated.  To turn it on use 'setoption getgems true' command", private=True)
-                if intervaltext is True:
-                        irc.reply("Interval Text Mode Activated.  To turn it off use 'setoption intervaltext false' command", private=True)
-                if pmtextmode is True:
-                        irc.reply("PMs from GameBot Mode Activated.  To turn it off use 'setoption pmtext false' command", private=True)
-                if townworkswitch is True:
-                        irc.reply("Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
-                if townworkswitch is False:
-                        irc.reply("Town/Forest Switch Mode Activated.  To change to Town/Work use 'setoption townwork true' command", private=True)
-                if xpupgrade is True:
-                        irc.reply("XPUpgrade Mode Activated.  To turn it off use 'setoption xpupgrade false' command", private=True)
-                if xpupgrade is False:
-                        irc.reply("XPUpgrade Mode Deactivated.  To turn it on use 'setoption xpupgrade true' command", private=True)
-                irc.reply("Current Goldsave: {0}.  If you want to change it use 'setoption goldsave number' command".format(goldsave), private=True)
-                irc.reply("Current Item Buy Level: {0}.  If you want to change it use 'setoption itembuy number' command".format(setbuy), private=True)
-                irc.reply("Current Scrolls Buy ItemScore: {0}.  If you want to change it use 'setoption scrollssum number' command".format(scrollssum), private=True)
-                irc.reply("Current SlaySum Minimum ItemScore: {0}.  If you want to change it use 'setoption slaysum number' command".format(slaysum), private=True)
-                irc.reply("Current XPSpend for xpget item upgrades: {0}.  If you want to change it use 'setoption xpspend number' command".format(xpspend), private=True)
-                irc.reply(" ", private=True)
-                irc.reply("For a list of PlayBot commands use <bot> quakenetplaybotmulti help", private=True)
-                irc.reply(" ", private=True)
         if charcount == 1:
-                self.versionchecker(irc)
+                self.loginstart(irc)
         if charcount >= 5:
             irc.error("You can only play with 4 character.")
             charcount = 4
@@ -1390,6 +1644,82 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         self.main(irc)
 
     login = wrap(login, [("checkCapability", "admin"), "text"])
+
+    def loginstart(self, irc):
+        global setbuy
+        global buylife
+        global fightmode
+        global blackbuyspend
+        global blackbuyspend14
+        global getgems
+        global scrollssum
+        global xpupgrade
+        global xpspend
+        global intervaltext
+        global townworkswitch
+        global goldsave
+        global creepattack
+        global expbuy
+        global slaysum
+        global loginsettingslist
+        global bottextmode
+        global errortextmode
+        global pmtextmode
+
+        if loginsettingslist is True:
+                if blackbuyspend is True:
+                        self.reply(irc, "BlackBuy Spend Mode Activated.  To turn it off use 'setoption blackbuy false' command", 1)
+                if blackbuyspend is False:
+                        self.reply(irc, "BlackBuy Spend Mode Deactivated.  To turn it off use 'setoption blackbuy true' command", 1)
+                if blackbuyspend14 is True:
+                        self.reply(irc, "BlackBuy Spend 14 Mode Activated.  To turn it off use 'setoption blackbuy14 false' command", 1)
+                if blackbuyspend14 is False:
+                        self.reply(irc, "BlackBuy Spend 14 Mode Deactivated.  To turn it off use 'setoption blackbuy14 true' command", 1)
+                if bottextmode is True:
+                        self.reply(irc, "Bot Text Mode Activated.  To turn it off use 'setoption bottext false' command", 1)
+                if buylife is True:
+                        self.reply(irc, "Buy Life Mode Activated.  To turn it off use 'setoption buylife false' command", 1)
+                if buylife is False:
+                        self.reply(irc, "Buy Life Mode Deactivated.  To turn it on use 'setoption buylife true' command", 1)
+                if creepattack is True:
+                        self.reply(irc, "CreepAttack Mode Activated.  To turn it off use 'setoption creepattack false' command", 1)
+                if creepattack is False:
+                        self.reply(irc, "CreepAttack Mode Deactivated.  To turn it on use 'setoption creepattack true' command", 1)
+                if errortextmode is True:
+                        self.reply(irc, "Error Text Mode Activated.  To turn it off use 'setoption errortext false' command", 1)
+                if expbuy is True:
+                        self.reply(irc, "Experience Buying Mode Activated.  To turn it off use 'setoption expbuy false' command", 1)
+                if expbuy is False:
+                        self.reply(irc, "Experience Buying Mode Deactivated.  To turn it on use 'setoption expbuy true' command", 1)
+                if fightmode is True:
+                        self.reply(irc, "Fighting Mode Activated.  To turn it off use 'setoption fights false' command", 1)
+                if fightmode is False:
+                        self.reply(irc, "Fighting Mode Deactivated.  To turn it on use 'setoption fights true' command", 1)
+                if getgems is True:
+                        self.reply(irc, "GetGems Mode Activated.  To turn it off use 'setoption getgems false' command", 1)
+                if getgems is False:
+                        self.reply(irc, "GetGems Mode Deactivated.  To turn it on use 'setoption getgems true' command", 1)
+                if intervaltext is True:
+                        self.reply(irc, "Interval Text Mode Activated.  To turn it off use 'setoption intervaltext false' command", 1)
+                if pmtextmode is True:
+                        self.reply(irc, "PMs from GameBot Mode Activated.  To turn it off use 'setoption pmtext false' command", 1)
+                if townworkswitch is True:
+                        self.reply(irc, "Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", 1)
+                if townworkswitch is False:
+                        self.reply(irc, "Town/Forest Switch Mode Activated.  To change to Town/Work use 'setoption townwork true' command", 1)
+                if xpupgrade is True:
+                        self.reply(irc, "XPUpgrade Mode Activated.  To turn it off use 'setoption xpupgrade false' command", 1)
+                if xpupgrade is False:
+                        self.reply(irc, "XPUpgrade Mode Deactivated.  To turn it on use 'setoption xpupgrade true' command", 1)
+                self.reply(irc, "Current Goldsave: {0}.  If you want to change it use 'setoption goldsave number' command".format(goldsave), 1)
+                self.reply(irc, "Current Item Buy Level: {0}.  If you want to change it use 'setoption itembuy number' command".format(setbuy), 1)
+                self.reply(irc, "Current Scrolls Buy ItemScore: {0}.  If you want to change it use 'setoption scrollssum number' command".format(scrollssum), 1)
+                self.reply(irc, "Current SlaySum Minimum ItemScore: {0}.  If you want to change it use 'setoption slaysum number' command".format(slaysum), 1)
+                self.reply(irc, "Current XPSpend for xpget item upgrades: {0}.  If you want to change it use 'setoption xpspend number' command".format(xpspend), 1)
+                self.reply(irc, " ", 1)
+                self.reply(irc, "For a list of PlayBot commands use <bot> quakenetplaybotmulti help", 1)
+                self.reply(irc, " ", 1)
+        self.versionchecker(irc)
 
     def logoutchar(self, irc, msg, args):
         """takes no arguments
@@ -1414,6 +1744,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         global pswd3
         global pswd4
         global gameactive
+        global autostartmode
         
         if gameactive is False:
             irc.error("You are not logged in")
@@ -1456,13 +1787,18 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
             irc.error("All Characters have already been Logged Out")
         if(charcount >= 1 and charcount <= 4):
             charcount -= 1
+            self.configwrite2()
+        if charcount == 0:
+            if autostartmode is True:
+                    autostartmode = False
+                    self.configwrite()
 
     logoutchar = wrap(logoutchar, [("checkCapability", "admin")])
 
     def logoutgame(self, irc, msg, args, num):
         """<charnumber>
 
-        Logs you out of MultiRPG.   Charnumber is 1 to 5, you can see which charnumber belongs to which char in settings.
+        Logs you out of IdleRPG.   Charnumber is 1 to 4, you can see which charnumber belongs to which char in settings.
         """
         global gameactive
         
@@ -1556,6 +1892,15 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
 
             qplayerslist = wrap(qplayerslist, [("checkCapability", "admin")])
 
+    def singleread(self, irc):
+        try:
+                f = open(filename3,"rb")
+                playerListS = pickle.load(f)
+                f.close()
+        except:
+                playerListS = []
+        return playerListS
+
     def multiwrite(self, irc):
         global name
         global name2
@@ -1598,19 +1943,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
         self.multieraser(irc)
 
     qmultierase = wrap(qmultierase, [("checkCapability", "admin")])
-
-    def singleread(self, irc):
-        try:
-                f = open(filename3,"rb")
-                playerListS = pickle.load(f)
-                f.close()
-        except IOError:
-                playerListS = []
-        except EOFError:
-                playerListS = []
-        except ValueError:
-                playerListS = []
-        return playerListS
 
     def fixlooper(self, irc, msg, args):
         """takes no arguments
@@ -1697,7 +2029,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 if notcommand is True:
                         conf.supybot.reply.whenNotCommand.set("False")
                         configchange = True
-
 
                 if zombiecheck is False:
                             c = ircdb.channels.getChannel(channame)
@@ -1826,6 +2157,8 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
             irc.reply("PlayBot Commands List", private=True)
             irc.reply(" ", private=True)
             irc.reply("Area Switching Mode Off     - setoption townwork off", private=True)
+            irc.reply("Autostart Mode Off          - setoption autostart false", private=True)
+            irc.reply("Autostart Mode On           - setoption autostart true", private=True)
             irc.reply("BlackBuy Spend Mode Off     - setoption blackbuy false", private=True)
             irc.reply("BlackBuy Spend Mode On      - setoption blackbuy true", private=True)
             irc.reply("BlackBuy 14 Spend Mode Off  - setoption blackbuy14 false", private=True)
@@ -1913,6 +2246,7 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
             global bottextmode
             global errortextmode
             global pmtextmode
+            global autostartmode
 
             irc.reply("Playbot Settings List", private=True)
             irc.reply(" ", private=True)
@@ -1922,13 +2256,13 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                     irc.reply("Area Switch Mode - Town/Forest", private=True)
             if townworkswitch is None:
                     irc.reply("Area Switch Mode - Deactivated", private=True)
-            irc.reply("BlackBuy Spend Mode - {0}      BlackBuy 14 Spend Mode - {1}".format(blackbuyspend, blackbuyspend14), private=True)
-            irc.reply("Bot Text Mode - {0}            Buy Life Mode - {1}".format(bottextmode, buylife), private=True)
-            irc.reply("CreepAttack Mode - {0}         Error Text Mode - {1}".format(creepattack, errortextmode), private=True)
-            irc.reply("Experience Buying Mode - {0}   Fighting Mode - {1}".format(expbuy, fightmode), private=True)
-            irc.reply("GameBot PMs Mode - {0}         GetGems Mode - {1}".format(pmtextmode, getgems), private=True)
-            irc.reply("Goldsave - {1}                 Interval Text Mode - {1}".format(goldsave, intervaltext), private=True)
-            irc.reply("Item Buy Level - {0}".format(setbuy), private=True)
+            irc.reply("Autostart Mode - {0}           BlackBuy Spend Mode - {1}".format(autostartmode, blackbuyspend), private=True)
+            irc.reply("BlackBuy 14 Spend Mode - {0}   Bot Text Mode - {1}".format(blackbuyspend14, bottextmode), private=True)
+            irc.reply("Buy Life Mode - {0}            CreepAttack Mode - {1}".format(buylife, creepattack), private=True)
+            irc.reply("Error Text Mode - {0}          Experience Buying Mode - {1}".format(errortextmode, expbuy), private=True)
+            irc.reply("Fighting Mode - {0}            GameBot PMs Mode - {1}".format(fightmode, pmtextmode), private=True)
+            irc.reply("GetGems Mode - {0}             Goldsave - {1}".format(getgems, goldsave), private=True)
+            irc.reply("Interval Text Mode - {0}       Item Buy Level - {1}".format(intervaltext, setbuy), private=True)
             irc.reply("Player Character 1 - {0}, {1}  Player Character 2 - {2}, {3}".format(char1, name, char2, name2), private=True)
             irc.reply("Player Character 3 - {0}, {1}  Player Character 4 - {2}, {3}".format(char3, name3, char4, name4), private=True)
             irc.reply("Scrolls Buy ItemScore - {0}    Set Creep Target - {1}".format(scrollssum, setcreeptarget), private=True)
@@ -2532,8 +2866,8 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
             
             webworks = True
             weberror = False
-            context = ssl._create_unverified_context()
 
+            context = ssl._create_unverified_context()
             # get raw player data from web, parse for relevant entry
             if python3 is False:
                 try:
@@ -4261,7 +4595,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                         return
                                 for entry in messagelist2:
                                     if(botname == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 1)
                                         return
                                 if(botname == chanmsgnick and "You are {0}".format(name) in text):
                                     if pmtextmode is True:
@@ -4276,7 +4609,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                         return
                                 for entry in messagelist2:
                                     if(botname == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 2)
                                         return
                                 if(botname == chanmsgnick and "You are {0}".format(name2) in text):
                                     if pmtextmode is True:
@@ -4291,7 +4623,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                         return
                                 for entry in messagelist2:
                                     if(botname == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 3)
                                         return
                                 if(botname == chanmsgnick and "You are {0}".format(name3) in text):
                                     if pmtextmode is True:
@@ -4306,7 +4637,6 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                                         return
                                 for entry in messagelist2:
                                     if(botname == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 4)
                                         return
                                 if(botname == chanmsgnick and "You are {0}".format(name4) in text):
                                     if pmtextmode is True:
@@ -4907,7 +5237,15 @@ class QuakenetPlayBotMulti(callbacks.Plugin):
                 schedule.removeEvent('loopqm')
                 schedule.addEvent(loopqm, nextTime, "loopqm")        
 
+    def __init__(self, irc):
+        self.__parent = super(QuakenetPlayBotMulti, self)
+        self.__parent.__init__(irc)
+
+        if autostartmode is True:
+                self.autostart(irc)
+
     def die(self):
+        self.__parent.die()
         try:
                 schedule.removeEvent('loopqm')
         except:

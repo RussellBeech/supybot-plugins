@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2025, Russell Beech
+# Copyright (c) 2021-2026, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ import supybot.conf as conf
 import supybot.registry as registry
 try:
     from supybot.i18n import PluginInternationalization
-    _ = PluginInternationalization('MultiGamePlayBot')
+    _ = PluginInternationalization('AbandonedPlayBot')
 except:
     # Placeholder that allows to run the plugin on a bot
     # without the i18n module
@@ -45,12 +45,12 @@ def configure(advanced):
     # user or not.  You should effect your configuration by manipulating the
     # registry as appropriate.
     from supybot.questions import expect, anything, something, yn
-    conf.registerPlugin('MultiGamePlayBot', True)
+    conf.registerPlugin('AbandonedPlayBot', True)
 
 
-MultiGamePlayBot = conf.registerPlugin('MultiGamePlayBot')
+AbandonedPlayBot = conf.registerPlugin('AbandonedPlayBot')
 # This is where your configuration variables (if any) should go.  For example:
-# conf.registerGlobalValue(MultiGamePlayBot, 'someConfigVariableName',
+# conf.registerGlobalValue(AbandonedPlayBot, 'someConfigVariableName',
 #     registry.Boolean(False, _("""Help for someConfigVariableName.""")))
 
 

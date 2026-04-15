@@ -1,7 +1,7 @@
 The PlayBot works with Supybot/Limnoria and supports python 2 or 3.
 
 Here are some instructions on how to get this working if do not know already.
-For the plugins with Multi or MultiMulti you need to load the Network plugin
+For the plugin with Multi you need to load the Network plugin
 Unpack the archive and copy it to your supybot plugins directory.
 Then load the plugin using the load plugin command.
 When it is loaded a message should come up "The operation succeeded"
@@ -16,13 +16,11 @@ The different version are:
 Single - Single player.  
 Multi - Up to 5 players.  
 
-MultiGamePlayBot, MultiGamePlayBotMulti, MultiGamePlayBotMultiMulti are PlayBots for IdleRPG games on:  
-Abandoned #zw-idlerpg.
+AbandonedPlayBot and AbandonedPlayBotMulti are PlayBots for IdleRPG game on Abandoned-Irc #zw-idlerpg.
  
 The different version are:  
 Single - Single player on a Single Game.  
 Multi - Up to 4 players on a Single Game.  
-MultiMulti - Up to 4 players over Multiple Games.  
 
 QuakenetPlayBot and QuakeNetPlayBotMulti are PlayBots for IdleRPG game on QuakeNet #idlerpg  
 The different version are:  

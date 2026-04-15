@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2025, Russell Beech
+# Copyright (c) 2021-2026, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -61,15 +61,15 @@ if sys.version_info[0] < 3:
 
 try:
     from supybot.i18n import PluginInternationalization
-    _ = PluginInternationalization('MultiGamePlayBotMulti')
+    _ = PluginInternationalization('AbandonedPlayBotMulti')
 except ImportError:
     # Placeholder that allows to run the plugin on a bot
     # without the i18n module
     _ = lambda x: x
 
-__module_name__ = "MultiGame #IdleRPG Playbot Script"
-__module_version__ = "1.8"
-__module_description__ = "MultiGame #IdleRPG Playbot Script"
+__module_name__ = "Abandoned-IRC RIdleRPG Playbot Script"
+__module_version__ = "2.0"
+__module_description__ = "Abandoned-IRC IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
 creeps = [      ["Roach",       1500],   \
@@ -126,13 +126,7 @@ monsters = [    ["Blue_Dragon",         7500],  \
 creeps.reverse()
 monsters.reverse()
 
-#               Network                 Website                                 FightLL ChanName        BotName                         GameID  WebSSL
-gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       True,   "#zw-idlerpg",  "IdleRPG",                      1,      True],  \
-                ["efnet",               "http://idle.rpgsystems.org",           True,   "#idlerpg",     "IdleRPG",                      3,      False], \
-                ["irc-nerds",           "http://irpgnerds.ddns.net",            True,   "#idlerpg",     "IdleRPG",                      4,      False],  \
-                ["rizon",               "https://tilde.green/~hellspawn",       True,   "#idle",        "iRPG",                         2,      True], \
-                ["twistednet",          "http://idlerpg.twistednet.org",        False,  "#idlerpg",     "IdleRPG",                      5,      False]   ]
-
+website = "https://irpg.abandoned-irc.net"
 russweb = "http://russellb.x10.mx/"
 gitweb = "https://github.com/RussellBeech/supybot-plugins"
 gitweb2 = "https://raw.githubusercontent.com/RussellBeech/supybot-plugins/master/"
@@ -166,6 +160,8 @@ blackbuyspend = True
 blackbuyspend14 = True
 getgems = True
 fightmode = True
+channame = "#zw-idlerpg"
+botname = "IdleRPG"
 creepattack = True # True = On, False = Off - Autocreep selection
 setcreeptarget = "Werewolf" # Sets creep target. creepattack needs to be False to use
 scrollssum = 3000 # Itemscore you start buying scrolls at
@@ -183,24 +179,9 @@ expbuy = False
 autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 slaysum = 1000 # minimum sum you start slaying without mana from
 loginsettingslist = True # True = on, False = off - Settings List at start
-disablemgplayerslistcommand = False # True = on, False = off - You can disable the mgplayerslist command if there are multiple of them when running single, multi and multimulti together
+disableaplayerslistcommand = False # True = on, False = off - You can disable the aplayerslist command if there are multiple of them when running single and multi together
 
 # declare stats as global
-fightlevellimit = None
-channame = None
-botname = None
-channame2 = None
-botname2 = None
-channame3 = None
-botname3 = None
-channame4 = None
-botname4 = None
-website = None
-gameid = 0
-gameid2 = 0
-gameid3 = 0
-gameid4 = 0
-webssl = None
 name = None
 pswd = None
 name2 = None
@@ -321,17 +302,20 @@ botdisable1 = False
 botdisable2 = False
 botdisable3 = False
 botdisable4 = False
-networkname = None
+Owner = None
+Owner2 = None
+Owner3 = None
+Owner4 = None
+autostartmode = False
 playbotcount = 0
 playbottext = None
-playbotid = "MGM"
+playbotid = "AM"
 pbcount = 0
 
-multigame = False
-multigamemulti = False
-multigamemultimulti = False
+abandoned = False
+abandonedmulti = False
 
-fileprefix = "MultiGamePlayBotMulticonfig.txt"
+fileprefix = "AbandonedPlayBotMulticonfig.txt"
 path = conf.supybot.directories.data
 filename = path.dirize(fileprefix)
 try:
@@ -340,17 +324,25 @@ try:
         f.close()
 except:
         configList = []
-fileprefix3 = "multigamesingleplayers.txt"
+fileprefix2 = "autostartmulticonfigam.txt"
+path = conf.supybot.directories.data
+filename2 = path.dirize(fileprefix2)
+try:
+        f = open(filename2,"rb")
+        autoconfigList = pickle.load(f)
+        f.close()
+except:
+        autoconfigList = []
+fileprefix3 = "abandonedsingleplayers.txt"
 path = conf.supybot.directories.data
 filename3 = path.dirize(fileprefix3)
-fileprefix4 = "multigamemultiplayers.txt"
+fileprefix4 = "abandonedmultiplayers.txt"
 path = conf.supybot.directories.data
 filename4 = path.dirize(fileprefix4)
-fileprefix5 = "multigamemultimultiplayers.txt"
-path = conf.supybot.directories.data
-filename5 = path.dirize(fileprefix5)
 
 for entry in configList:
+        if(entry[0] == "autostartmode"):
+                autostartmode = entry[1]
         if(entry[0] == "blackbuyspend"):
                 blackbuyspend = entry[1]
         if(entry[0] == "blackbuyspend14"):
@@ -394,8 +386,8 @@ for entry in configList:
         if(entry[0] == "xpupgrade"):
                 xpupgrade = entry[1]
 
-class MultiGamePlayBotMulti(callbacks.Plugin):
-    """MultiGame PlayBot #Idlerpg"""
+class AbandonedPlayBotMulti(callbacks.Plugin):
+    """Abandoned PlayBot Idlerpg"""
     threaded = True
 
     def _getIrc(self, network):
@@ -415,11 +407,13 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         webversion = None
         gitversion = None
         newversion = 0
+        versionfilename = "playbotversionabandonedsupy.txt"
+
         try:
                 if python3 is False:
-                        text = urllib2.urlopen(russweb + "playbotversionmultigamesupy.txt")
+                        text = urllib2.urlopen(russweb + versionfilename)
                 if python3 is True:
-                        text = urllib.request.urlopen(russweb + "playbotversionmultigamesupy.txt")
+                        text = urllib.request.urlopen(russweb + versionfilename)
                 webversion = text.read()
                 webversion = float( webversion )
                 text.close()
@@ -428,10 +422,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 self.replymulti(irc, "Could not access {0}".format(russweb))
 
         try:
+                context = ssl._create_unverified_context()
                 if python3 is False:
-                        text2 = urllib2.urlopen(gitweb2 + "playbotversionmultigamesupy.txt")
+                        text2 = urllib2.urlopen(gitweb2 + versionfilename, context=context)
                 if python3 is True:
-                        text2 = urllib.request.urlopen(gitweb2 + "playbotversionmultigamesupy.txt")
+                        text2 = urllib.request.urlopen(gitweb2 + versionfilename, context=context)
                 gitversion = text2.read()
                 text2.close()
                 if python3 is True:
@@ -469,6 +464,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         self.replymulti(irc, "Give me, Give me")
 
     def configwrite(self):
+        global autostartmode
         global blackbuyspend
         global blackbuyspend14
         global buylife
@@ -492,6 +488,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global pmtextmode
 
         configList = []
+        configList.append( ( "autostartmode", autostartmode ) )
         configList.append( ( "blackbuyspend", blackbuyspend ) )
         configList.append( ( "blackbuyspend14", blackbuyspend14 ) )
         configList.append( ( "bottextmode", bottextmode ) )
@@ -517,6 +514,53 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         pickle.dump(configList,f)
         f.close()
 
+    def configwrite2(self):
+        global name
+        global pswd
+        global nickname
+        global netname
+        global name2
+        global pswd2
+        global nickname2
+        global netname2
+        global name3
+        global pswd3
+        global nickname3
+        global netname3
+        global name4
+        global pswd4
+        global nickname4
+        global netname4
+        global supynick
+        global supynick2
+        global supynick3
+        global supynick4
+
+        autoconfigList = []
+        autoconfigList.append( ( "name", name ) )
+        autoconfigList.append( ( "pswd", pswd ) )
+        autoconfigList.append( ( "nickname", nickname ) )
+        autoconfigList.append( ( "netname", netname ) )
+        autoconfigList.append( ( "name2", name2 ) )
+        autoconfigList.append( ( "pswd2", pswd2 ) )
+        autoconfigList.append( ( "nickname2", nickname2 ) )
+        autoconfigList.append( ( "netname2", netname2 ) )
+        autoconfigList.append( ( "name3", name3 ) )
+        autoconfigList.append( ( "pswd3", pswd3 ) )
+        autoconfigList.append( ( "nickname3", nickname3 ) )
+        autoconfigList.append( ( "netname3", netname3 ) )
+        autoconfigList.append( ( "name4", name4 ) )
+        autoconfigList.append( ( "pswd4", pswd4 ) )
+        autoconfigList.append( ( "nickname4", nickname4 ) )
+        autoconfigList.append( ( "netname4", netname4 ) )
+        autoconfigList.append( ( "supynick", supynick ) )
+        autoconfigList.append( ( "supynick2", supynick2 ) )
+        autoconfigList.append( ( "supynick3", supynick3 ) )
+        autoconfigList.append( ( "supynick4", supynick4 ) )
+        f = open(filename2,"wb")
+        pickle.dump(autoconfigList,f)
+        f.close()
+
     def eraseconfig(self, irc, msg, args):
         """takes no arguments
 
@@ -525,6 +569,10 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         configList = []
         f = open(filename,"wb")
         pickle.dump(configList,f)
+        f.close()
+        autoconfigList = []
+        f = open(filename2,"wb")
+        pickle.dump(autoconfigList,f)
         f.close()
         irc.reply("Config Erased", private=True)
     eraseconfig = wrap(eraseconfig, [("checkCapability", "admin")])
@@ -557,6 +605,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global bottextmode
         global errortextmode
         global pmtextmode
+        global autostartmode
       
         if value.lower()=='true':
             value=True
@@ -691,7 +740,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                 townworkswitch = True
                                 irc.reply("Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
         ##              Turns Area Switching Off
-                        if value is "off" or value == "Off":
+                        if value == "off" or value == "Off":
                                 townworkswitch = None
                                 irc.reply("Town/Forest Switch Mode Deactivated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
                 if text == "intervaltext":
@@ -757,6 +806,20 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         if value is False:
                                 pmtextmode = False
                                 irc.reply("Turns PMs from GameBot off.  To turn it back on use 'setoption pmtext true' command", private=True)
+                if text == "autostart":
+        ##              Turns Autostart Mode on
+                        if value is True:
+                                autostartmode = True
+                                self.configwrite2()
+                                irc.reply("Autostart Mode on.  To turn it back off use 'setoption autostart false' command", private=True)
+        ##              Turns Autostart Mode off
+                        if value is False:
+                                autostartmode = False
+                                autoconfigList = []
+                                f = open(filename2,"wb")
+                                pickle.dump(autoconfigList,f)
+                                f.close()
+                                irc.reply("Autostart Mode off  To turn it back on use 'setoption autostart true' command", private=True)
 
                 self.configwrite()
         if gameactive is False:
@@ -768,12 +831,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global otherIrc
         global botname
         global channame
-        global botname2
-        global channame2
-        global botname3
-        global channame3
-        global botname4
-        global channame4
         global botdisable1
         global otherIrc2
         global botdisable2
@@ -781,10 +838,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global botdisable3
         global otherIrc4
         global botdisable4
-        global netname
-        global netname2
-        global netname3
-        global netname4
         global char1
         global char2
         global char3
@@ -796,9 +849,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         botcount4 = 0
 
         if num == 1 and char1 is True:
-                for entry in gamelist:
-                        if entry[0] in netname.lower():
-                                botname = entry[4]
                 bottest = botname
                 botentry = []
 
@@ -819,14 +869,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 if botcount1 >= 2:
                         botdisable1 = True
         if num == 2 and char2 is True:
-                for entry in gamelist:
-                        if entry[0] in netname2.lower():
-                                botname2 = entry[4]
-                bottest = botname2
+                bottest = botname
                 botentry = []
 
                 try:
-                        ops = otherIrc2.state.channels[channame2].ops
+                        ops = otherIrc2.state.channels[channame].ops
 
                         for user in ops:
                                 if bottest in user and user != bottest:
@@ -838,18 +885,15 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 botcount2 = len(botentry)
                 if botcount2 == 1:
-                        botname2 = botname10
+                        botname = botname10
                 if botcount2 >= 2:
                         botdisable2 = True
         if num == 3 and char3 is True:
-                for entry in gamelist:
-                        if entry[0] in netname3.lower():
-                                botname3 = entry[4]
-                bottest = botname3
+                bottest = botname
                 botentry = []
 
                 try:
-                        ops = otherIrc3.state.channels[channame3].ops
+                        ops = otherIrc3.state.channels[channame].ops
 
                         for user in ops:
                                 if bottest in user and user != bottest:
@@ -861,18 +905,15 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 botcount3 = len(botentry)
                 if botcount3 == 1:
-                        botname3 = botname10
+                        botname = botname10
                 if botcount3 >= 2:
                         botdisable3 = True
         if num == 4 and char4 is True:
-                for entry in gamelist:
-                        if entry[0] in netname4.lower():
-                                botname4 = entry[4]
-                bottest = botname4
+                bottest = botname
                 botentry = []
 
                 try:
-                        ops = otherIrc4.state.channels[channame4].ops
+                        ops = otherIrc4.state.channels[channame].ops
 
                         for user in ops:
                                 if bottest in user and user != bottest:
@@ -884,15 +925,12 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 botcount4 = len(botentry)
                 if botcount4 == 1:
-                        botname4 = botname10
+                        botname = botname10
                 if botcount4 >= 2:
                         botdisable4 = True
 
     def usecommand(self, irc, commanded, num):
         global botname
-        global botname2
-        global botname3
-        global botname4
         global otherIrc
         global botdisable1
         global otherIrc2
@@ -913,11 +951,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         if(num == 1 and botdisable1 is False):
                 otherIrc.queueMsg(ircmsgs.privmsg(botname, commanded))
         if(num == 2 and botdisable2 is False):
-                otherIrc2.queueMsg(ircmsgs.privmsg(botname2, commanded))
+                otherIrc2.queueMsg(ircmsgs.privmsg(botname, commanded))
         if(num == 3 and botdisable3 is False):
-                otherIrc3.queueMsg(ircmsgs.privmsg(botname3, commanded))
+                otherIrc3.queueMsg(ircmsgs.privmsg(botname, commanded))
         if(num == 4 and botdisable4 is False):
-                otherIrc4.queueMsg(ircmsgs.privmsg(botname4, commanded))
+                otherIrc4.queueMsg(ircmsgs.privmsg(botname, commanded))
 
     def reply(self, irc, text, num):
         global nickname
@@ -925,9 +963,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global nickname3
         global nickname4
         global channame
-        global channame2
-        global channame3
-        global channame4
         global otherIrc
         global otherIrc2
         global otherIrc3
@@ -950,7 +985,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         if num == 2:
                 nickcheck2 = False
                 try:
-                    chanstate = otherIrc2.state.channels[channame2]
+                    chanstate = otherIrc2.state.channels[channame]
                     users = [user for user in chanstate.users]
                     for entry in users:
                         if nickname2 == entry:
@@ -960,7 +995,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         if num == 3:
                 nickcheck3 = False
                 try:
-                    chanstate = otherIrc3.state.channels[channame3]
+                    chanstate = otherIrc3.state.channels[channame]
                     users = [user for user in chanstate.users]
                     for entry in users:
                         if nickname3 == entry:
@@ -970,7 +1005,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         if num == 4:
                 nickcheck4 = False
                 try:
-                    chanstate = otherIrc4.state.channels[channame4]
+                    chanstate = otherIrc4.state.channels[channame]
                     users = [user for user in chanstate.users]
                     for entry in users:
                         if nickname4 == entry:
@@ -1011,24 +1046,21 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global playbottext
         global playbotid
         global pbcount
-        global multigame
-        global multigamemulti
-        global multigamemultimulti
+        global abandoned
+        global abandonedmulti
 
         playbotcount = 0
         pbcount = 0
         quakeon = True
         quakemultion = True
-        multigameon = True
-        multigamemultion = True
-        multigamemultimultion = True
+        abandonedon = True
+        abandonedmultion = True
         playbotsingleon = True
         playbotmultion = True
         quake = False
         quakemulti = False
-        multigame = False
-        multigamemulti = False
-        multigamemultimulti = False
+        abandoned = False
+        abandonedmulti = False
         playbotsingle = False
         playbotmulti = False
         
@@ -1041,17 +1073,13 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         except:
                 quakemultion = False
         try:
-                multigamecheck = conf.supybot.plugins.get("MultiGamePlayBot")
+                abandonedcheck = conf.supybot.plugins.get("AbandonedPlayBot")
         except:
-                multigameon = False
+                abandonedon = False
         try:
-                multigamemulticheck = conf.supybot.plugins.get("MultiGamePlayBotMulti")
+                abandonedmulticheck = conf.supybot.plugins.get("AbandonedPlayBotMulti")
         except:
-                multigamemultion = False
-        try:
-                multigamemultimulticheck = conf.supybot.plugins.get("MultiGamePlayBotMultiMulti")
-        except:
-                multigamemultimultion = False
+                abandonedmultion = False
         try:
                 playbotsinglecheck = conf.supybot.plugins.get("PlayBotSingle")
         except:
@@ -1071,23 +1099,18 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 if quakemulti is True:
                         playbotcount += 1
 
-        if multigameon is True:
-                multigame = conf.supybot.plugins.MultiGamePlayBot()
-                if multigame is True:
+        if abandonedon is True:
+                abandoned = conf.supybot.plugins.AbandonedPlayBot()
+                if abandoned is True:
                         playbotcount += 1
                         pbcount += 1
 
-        if multigamemultion is True:
-                multigamemulti = conf.supybot.plugins.MultiGamePlayBotMulti()
-                if multigamemulti is True:
+        if abandonedmultion is True:
+                abandonedmulti = conf.supybot.plugins.AbandonedPlayBotMulti()
+                if abandonedmulti is True:
                         playbotcount += 1
                         pbcount += 1
 
-        if multigamemultimultion is True:
-                multigamemultimulti = conf.supybot.plugins.MultiGamePlayBotMultiMulti()       
-                if multigamemultimulti is True:
-                        playbotcount += 1
-                        pbcount += 1
         if playbotsingleon is True:
                 playbotsingle = conf.supybot.plugins.PlayBotSingle()       
                 if playbotsingle is True:
@@ -1102,6 +1125,220 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         if playbotcount >= 2:
                 playbottext = playbotid
 
+    def autostart(self, irc):
+        global name
+        global pswd
+        global name2
+        global pswd2
+        global name3
+        global pswd3
+        global name4
+        global pswd4
+        global netname
+        global nickname
+        global netname2
+        global nickname2
+        global netname3
+        global nickname3
+        global netname4
+        global nickname4
+        global gameactive
+        global char1
+        global char2
+        global char3
+        global char4
+        global charcount
+        global otherIrc
+        global supynick
+        global otherIrc2
+        global supynick2
+        global otherIrc3
+        global supynick3
+        global otherIrc4
+        global supynick4
+        global playerspagelist
+        global webworks
+        global pbcount
+        global Owner
+        global Owner2
+        global Owner3
+        global Owner4
+        global autostartmode
+
+        for entry in autoconfigList:
+                if(entry[0] == "name"):
+                        name = entry[1]
+                if(entry[0] == "pswd"):
+                        pswd = entry[1]
+                if(entry[0] == "nickname"):
+                        nickname = entry[1]
+                if(entry[0] == "netname"):
+                        netname = entry[1]
+                if(entry[0] == "name2"):
+                        name2 = entry[1]
+                if(entry[0] == "pswd2"):
+                        pswd2 = entry[1]
+                if(entry[0] == "nickname2"):
+                        nickname2 = entry[1]
+                if(entry[0] == "netname2"):
+                        netname2 = entry[1]
+                if(entry[0] == "name3"):
+                        name3 = entry[1]
+                if(entry[0] == "pswd3"):
+                        pswd3 = entry[1]
+                if(entry[0] == "nickname3"):
+                        nickname3 = entry[1]
+                if(entry[0] == "netname3"):
+                        netname3 = entry[1]
+                if(entry[0] == "name4"):
+                        name4 = entry[1]
+                if(entry[0] == "pswd4"):
+                        pswd4 = entry[1]
+                if(entry[0] == "nickname4"):
+                        nickname4 = entry[1]
+                if(entry[0] == "netname4"):
+                        netname4 = entry[1]
+
+        if name != None and pswd != None:
+                char1 = True
+        if name2 != None and pswd2 != None:
+                char2 = True
+        if name3 != None and pswd3 != None:
+                char3 = True
+        if name4 != None and pswd4 != None:
+                char4 = True
+
+        bootdelay1 = False
+        bootdelay2 = False
+        bootdelay3 = False
+        bootdelay4 = False
+        if char1 is True:
+                try:
+                        checkotherIrc = self._getIrc(netname)
+                        if checkotherIrc.server == "unset":
+                                bootdelay1 = True
+                                char1 = False 
+                except NameError:
+                        bootdelay1 = True
+                        char1 = False 
+        if char2 is True:
+                try:
+                        checkotherIrc2 = self._getIrc(netname2)
+                        if checkotherIrc2.server == "unset":
+                                bootdelay2 = True
+                                char2 = False 
+                except NameError:
+                        bootdelay2 = True
+                        char2 = False 
+        if char3 is True:
+                try:
+                        checkotherIrc3 = self._getIrc(netname3)
+                        if checkotherIrc3.server == "unset":
+                                bootdelay3 = True
+                                char3 = False 
+                except NameError:
+                        bootdelay3 = True
+                        char3 = False 
+        if char4 is True:
+                try:
+                        checkotherIrc4 = self._getIrc(netname4)
+                        if checkotherIrc4.server == "unset":
+                                bootdelay4 = True
+                                char4 = False 
+                except NameError:
+                        bootdelay4 = True
+                        char4 = False 
+
+        if bootdelay1 is True or bootdelay2 is True or bootdelay3 is True or bootdelay4 is True:
+                def bootloopam():
+                    self.autostart(irc)
+                delayTime = time.time() + 60
+                
+                try:
+                        schedule.addEvent(bootloopam, delayTime, "bootloopam")
+                except AssertionError:
+                        schedule.removeEvent('bootloopam')
+                        schedule.addEvent(bootloopam, delayTime, "bootloopam")
+                return
+
+        if char1 is False and char2 is False and char3 is False and char4 is False:
+                charcount = 0
+                gameactive = False
+                irc.error("Autostart Failed")
+                autostartmode = False
+                self.configwrite()
+
+        if char1 is True:
+                gameactive = True
+                irc = world.getIrc(netname)
+                supynick = irc.nick
+                Owner = irc.getCallback('Owner')
+                otherIrc = self._getIrc(netname)
+
+                if(name != None and pswd != None):
+                        self.usecommand(irc, "login {0} {1}".format(name, pswd), 1 )
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 1)
+                        self.reply(irc, "Player Character 1 has logged in", 1)                
+
+        if char2 is True:
+                irc = world.getIrc(netname2)
+                supynick2 = irc.nick
+                Owner2 = irc.getCallback('Owner')
+                otherIrc2 = self._getIrc(netname2)
+
+                if(name2 != None and pswd2 != None):
+                        self.usecommand(irc, "login {0} {1}".format(name2, pswd2), 2)
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 2)
+                        self.reply(irc, "Player Character 2 has logged in", 2)                
+
+        if char3 is True:
+                irc = world.getIrc(netname3)
+                supynick3 = irc.nick
+                Owner3 = irc.getCallback('Owner')
+                otherIrc3 = self._getIrc(netname3)
+
+                if(name3 != None and pswd3 != None):
+                        self.usecommand(irc, "login {0} {1}".format(name3, pswd3), 3)
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 3)
+                        self.reply(irc, "Player Character 3 has logged in", 3)                
+
+        if char4 is True:
+                irc = world.getIrc(netname4)
+                supynick4 = irc.nick
+                Owner4 = irc.getCallback('Owner')
+                otherIrc4 = self._getIrc(netname4)
+
+                if(name4 != None and pswd4 != None):
+                        self.usecommand(irc, "login {0} {1}".format(name4, pswd4), 4)
+                        charcount += 1
+                        time.sleep(3) # Needed
+                        self.usecommand(irc, "whoami", 4)
+                        self.reply(irc, "Player Character 4 has logged in", 4)                
+
+        if (charcount >= 1 and charcount <= 4):        
+                self.loginstart(irc)
+                self.webdata(irc)
+                self.configcheck(irc)
+                self.multiwrite(irc)
+                if webworks is True:
+                        self.itemsbuilder(irc)
+                if char1 is True and webworks is True:
+                        self.newlister(irc, 1)
+                if char2 is True and webworks is True:
+                        self.newlister(irc, 2)
+                if char3 is True and webworks is True:
+                        self.newlister(irc, 3)
+                if char4 is True and webworks is True:
+                        self.newlister(irc, 4)
+
+                self.main(irc)
+
     def login(self, irc, msg, args, arg2):
         """<charname> <password>
 
@@ -1115,8 +1352,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global pswd3
         global name4
         global pswd4
-        global setbuy
-        global buylife
         global netname
         global nickname
         global netname2
@@ -1125,12 +1360,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global nickname3
         global netname4
         global nickname4
-        global channame
-        global channame2
-        global channame3
-        global channame4
         global gameactive
-        global fightmode
         global charcount
         global otherIrc
         global supynick
@@ -1144,85 +1374,48 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global char2
         global char3
         global char4
-        global blackbuyspend
-        global blackbuyspend14
-        global getgems
-        global scrollssum
-        global xpupgrade
-        global xpspend
-        global intervaltext
-        global townworkswitch
-        global goldsave
-        global creepattack
-        global gamelist
-        global website
-        global fightlevellimit
-        global botname
-        global botname2
-        global botname3
-        global botname4
-        global buyluck
-        global buypower
-        global expbuy
-        global gameid
-        global gameid2
-        global gameid3
-        global gameid4
         global playerspagelist
         global webworks
-        global networkname
-        global slaysum
-        global webssl
         global pbcount
-        global loginsettingslist
-        global bottextmode
-        global errortextmode
-        global pmtextmode
+        global Owner
+        global Owner2
+        global Owner3
+        global Owner4
+        global autostartmode
 
         charcount += 1
 
-        netlist = []
-        for entry in gamelist:
-                netlist.append( ( entry[0] ) )
         if charcount == 1:
-                netcheck = False
                 gameactive = True
-                nickname = msg.nick
                 netname = self._getIrcName(irc)
+                nickname = msg.nick
                 supynick = irc.nick
                 otherIrc = self._getIrc(netname)
                 namecheck = False
+                Owner = irc.getCallback('Owner')
 
-                for entry in gamelist:
-                        if entry[0] in netname.lower():
-                                networkname = entry[0]
-                                website = entry[1]
-                                fightlevellimit = entry[2]
-                                channame = entry[3]
-                                botname = entry[4]
-                                gameid = entry[5]
-                                webssl = entry[6]
-                                netcheck = True
-
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-
-                try:
-                        if(name is None or pswd is None):
-                                name = args2[0]
-                                pswd = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> multigameplaybotmulti login CharName Password" )
-                        
-                if netcheck is True:
-                        self.webdata(irc)
-                if netcheck is False:
-                        irc.error("Networks supported: {0}".format(netlist))
-                        if "quakenet" in netname.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
-                if(name is None or pswd is None or netcheck is False):
+                if "undernet" in netname.lower():
+                        irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
                         charcount = 0
-                        irc.error("Login Failed")
+                if "quakenet" in netname.lower():
+                        irc.error("You need to use the QuakeNet version of PlayBot")
+                        charcount = 0
+
+                if charcount == 1:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+
+                        try:
+                                if(name is None or pswd is None):
+                                        name = args2[0]
+                                        pswd = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> abandonedplaybotmulti login CharName Password" )
+                                
+                        self.webdata(irc)
+                        if(name is None or pswd is None):
+                                charcount = 0
+                                irc.error("Login Failed")
                 if charcount == 1:
                         try:
                                 for entry in playerspagelist:
@@ -1240,63 +1433,14 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                 try:
                                         singlename = singleplayerlist[0][1]
                                         singlenetname = singleplayerlist[0][3]
-                                        singlegameid = singleplayerlist[0][5]
-                                        if(gameid == singlegameid and name == singlename):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(name))
+                                        if(name == singlename):
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(name))
                                                 charcount = 0
                                         if(netname == singlenetname):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(singlename))
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(singlename))
                                                 charcount = 0
                                 except IndexError:
-                                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
-                        if pbcount >= 2:
-                                multimultiplayerlist = self.multimultiread(irc)
-                                count = 0
-                                multimultiname = None
-                                multimultiname2 = None
-                                multimultiname3 = None
-                                multimultiname4 = None
-                                multimultinetname = None
-                                multimultinetname2 = None
-                                multimultinetname3 = None
-                                multimultinetname4 = None
-                                multimultigameid = 0
-                                multimultigameid2 = 0
-                                multimultigameid3 = 0
-                                multimultigameid4 = 0
-                                for entry in multimultiplayerlist:
-                                        count += 1
-                                        if count == 1:
-                                                multimultiname = entry[1]
-                                                multimultinetname = entry[3]
-                                                multimultigameid = entry[5]
-                                        if count == 2:
-                                                multimultiname2 = entry[1]
-                                                multimultinetname2 = entry[3]
-                                                multimultigameid2 = entry[5]
-                                        if count == 3:
-                                                multimultiname3 = entry[1]
-                                                multimultinetname3 = entry[3]
-                                                multimultigameid3 = entry[5]
-                                        if count == 4:
-                                                multimultiname4 = entry[1]
-                                                multimultinetname4 = entry[3]
-                                                multimultigameid4 = entry[5]
-                                if((name == multimultiname and gameid == multimultigameid) or (name == multimultiname2 and gameid == multimultigameid2) or (name == multimultiname3 and gameid == multimultigameid3) or (name == multimultiname4 and gameid == multimultigameid4)):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name))
-                                        charcount = 0
-                                if(netname == multimultinetname):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
-                                        charcount = 0
-                                if(netname == multimultinetname2):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
-                                        charcount = 0
-                                if(netname == multimultinetname3):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
-                                        charcount = 0
-                                if(netname == multimultinetname4):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
-                                        charcount = 0
+                                        irc.reply("No Players Logged in on AbandonedPlayBot", private=True)
                 if charcount == 0:
                         gameactive = False
                         name = None
@@ -1308,127 +1452,72 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                 self.usecommand(irc, "login {0} {1}".format(name, pswd), 1 )
 
         if charcount == 2:
-                netcheck = False
-                nickname2 = msg.nick
                 netname2 = self._getIrcName(irc)
+                nickname2 = msg.nick
                 supynick2 = irc.nick
                 otherIrc2 = self._getIrc(netname2)
                 namecheck2 = False
+                Owner2 = irc.getCallback('Owner')
 
-                for entry in gamelist:
-                        if entry[0] in netname2.lower():
-                                channame2 = entry[3]
-                                botname2 = entry[4]
-                                gameid2 = entry[5]
-                                netcheck = True
+                if "undernet" in netname2:
+                        irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                        charcount = 1
+                if "quakenet" in netname2.lower():
+                        irc.error("You need to use the QuakeNet version of PlayBot")
+                        charcount = 1
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
+                if charcount == 2:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
 
-                try:
-                        if(name2 is None or pswd2 is None):
-                                name2 = args2[0]
-                                pswd2 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> multigameplaybotmulti login CharName Password" )
-                        
-                if netcheck is True:
+                        try:
+                                if(name2 is None or pswd2 is None):
+                                        name2 = args2[0]
+                                        pswd2 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> abandonedplaybotmulti login CharName Password" )
+                                
                         self.webdata(irc)
-                if netcheck is False:
-                        irc.error("Networks supported: {0}".format(netlist))
-                        if "quakenet" in netname2.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
-                if(name2 is None or pswd2 is None or netcheck is False):
-                        charcount = 1
-                        irc.error("Login Failed")
-                if gameid2 != gameid:
-                        charcount = 1
-                        irc.error("You can only use multiple players on {0}".format(networkname))
+                        if(name2 is None or pswd2 is None):
+                                charcount = 1
+                                irc.error("Login Failed")
+                if charcount == 2:
+                        try:
+                                for entry in playerspagelist:
+                                        if ">{0}<".format(name2) in entry:
+                                                namecheck2 = True
+                        except TypeError:
+                                webworks = False
+                        if(namecheck2 is False and webworks is True):
+                                irc.error("LOGIN ERROR: {0} does not exist".format(name2))
+                                charcount = 1
                 if charcount == 2:
                         if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
                                         singlenetname = singleplayerlist[0][3]
-                                        singlegameid = singleplayerlist[0][5]
-                                        if(gameid2 == singlegameid and name2 == singlename):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(name2))
+                                        if(name2 == singlename):
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(name2))
                                                 charcount = 1
                                         if(netname2 == singlenetname):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(singlename))
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(singlename))
                                                 charcount = 1
                                 except IndexError:
-                                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
-                        if pbcount >= 2:
-                                multimultiplayerlist = self.multimultiread(irc)
-                                count = 0
-                                multimultiname = None
-                                multimultiname2 = None
-                                multimultiname3 = None
-                                multimultiname4 = None
-                                multimultinetname = None
-                                multimultinetname2 = None
-                                multimultinetname3 = None
-                                multimultinetname4 = None
-                                multimultigameid = 0
-                                multimultigameid2 = 0
-                                multimultigameid3 = 0
-                                multimultigameid4 = 0
-                                for entry in multimultiplayerlist:
-                                        count += 1
-                                        if count == 1:
-                                                multimultiname = entry[1]
-                                                multimultinetname = entry[3]
-                                                multimultigameid = entry[5]
-                                        if count == 2:
-                                                multimultiname2 = entry[1]
-                                                multimultinetname2 = entry[3]
-                                                multimultigameid2 = entry[5]
-                                        if count == 3:
-                                                multimultiname3 = entry[1]
-                                                multimultinetname3 = entry[3]
-                                                multimultigameid3 = entry[5]
-                                        if count == 4:
-                                                multimultiname4 = entry[1]
-                                                multimultinetname4 = entry[3]
-                                                multimultigameid4 = entry[5]
-                                if((name2 == multimultiname and gameid2 == multimultigameid) or (name2 == multimultiname2 and gameid2 == multimultigameid2) or (name2 == multimultiname3 and gameid2 == multimultigameid3) or (name2 == multimultiname4 and gameid2 == multimultigameid4)):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name2))
-                                        charcount = 1
-                                if(netname2 == multimultinetname):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
-                                        charcount = 1
-                                if(netname2 == multimultinetname2):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
-                                        charcount = 1
-                                if(netname2 == multimultinetname3):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
-                                        charcount = 1
-                                if(netname2 == multimultinetname4):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
-                                        charcount = 1
+                                        irc.reply("No Players Logged in on AbandonedPlayBot", private=True)
                 if charcount == 2:
-                        if gameid2 == gameid:
-                                try:
-                                        for entry in playerspagelist:
-                                                if ">{0}<".format(name2) in entry:
-                                                        namecheck2 = True
-                                except TypeError:
-                                        webworks = False
-                                if(namecheck2 is False and webworks is True):
-                                        irc.error("LOGIN ERROR: {0} does not exist".format(name2))
+                        if(supynick2 == supynick):
+                                charcount = 1
+                                irc.error("Character {0} is already logged in".format(name))
+                        if(supynick2 != supynick):
+                                if name2 != name:
+                                        char2 = True
+                                        self.usecommand(irc, "login {0} {1}".format(name2, pswd2), 2 )
+                                        if autostartmode is True:
+                                            self.configwrite2()
+                                if name2 == name:
                                         charcount = 1
-                                if charcount == 2:
-                                        if(supynick2 == supynick):
-                                                charcount = 1
-                                                irc.error("Character {0} is already logged in".format(name))
-                                        if(supynick2 != supynick):
-                                                if name2 != name:
-                                                        char2 = True
-                                                        self.usecommand(irc, "login {0} {1}".format(name2, pswd2), 2 )
-                                                if name2 == name:
-                                                        charcount = 1
-                                                        irc.error("Character {0} is already logged in".format(name))
+                                        irc.error("Character {0} is already logged in".format(name))
                 if charcount == 1:
                         char2 = False
                         netname2 = None
@@ -1440,126 +1529,71 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         return
 
         if charcount == 3:
-                netcheck = False
-                nickname3 = msg.nick
                 netname3 = self._getIrcName(irc)
+                nickname3 = msg.nick
                 supynick3 = irc.nick
                 otherIrc3 = self._getIrc(netname3)
                 namecheck3 = False
+                Owner3 = irc.getCallback('Owner')
 
-                for entry in gamelist:
-                        if entry[0] in netname3.lower():
-                                channame3 = entry[3]
-                                botname3 = entry[4]
-                                gameid3 = entry[5]
-                                netcheck = True
+                if "undernet" in netname3.lower():
+                        irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                        charcount = 2
+                if "quakenet" in netname3.lower():
+                        irc.error("You need to use the QuakeNet version of PlayBot")
+                        charcount = 2
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
+                if charcount == 3:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
 
-                try:
-                        if(name3 is None or pswd3 is None):
-                                name3 = args2[0]
-                                pswd3 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> multigameplaybotmulti login CharName Password" )
-                        
-                if netcheck is True:
+                        try:
+                                if(name3 is None or pswd3 is None):
+                                        name3 = args2[0]
+                                        pswd3 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> abandonedplaybotmulti login CharName Password" )
+                                
                         self.webdata(irc)
-                if netcheck is False:
-                        irc.error("Networks supported: {0}".format(netlist))
-                        if "quakenet" in netname3.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
-                if(name3 is None or pswd3 is None or netcheck is False):
-                        charcount = 2
-                        irc.error("Login Failed")
-                if gameid3 != gameid:
-                        charcount = 2
-                        irc.error("You can only use multiple players on {0}".format(networkname))
+                        if(name3 is None or pswd3 is None):
+                                charcount = 2
+                                irc.error("Login Failed")
+                if charcount == 3:
+                        try:
+                                for entry in playerspagelist:
+                                        if ">{0}<".format(name3) in entry:
+                                                namecheck3 = True
+                        except TypeError:
+                                webworks = False
+                        if(namecheck3 is False and webworks is True):
+                                irc.error("LOGIN ERROR: {0} does not exist".format(name3))
+                                charcount = 2
                 if charcount == 3:
                         if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
                                         singlenetname = singleplayerlist[0][3]
-                                        singlegameid = singleplayerlist[0][5]
-                                        if(gameid3 == singlegameid and name3 == singlename):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(name3))
+                                        if(name3 == singlename):
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(name3))
                                                 charcount = 2
                                         if(netname3 == singlenetname):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(singlename))
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(singlename))
                                                 charcount = 2
                                 except IndexError:
-                                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
-                        if pbcount >= 2:
-                                multimultiplayerlist = self.multimultiread(irc)
-                                count = 0
-                                multimultiname = None
-                                multimultiname2 = None
-                                multimultiname3 = None
-                                multimultiname4 = None
-                                multimultinetname = None
-                                multimultinetname2 = None
-                                multimultinetname3 = None
-                                multimultinetname4 = None
-                                multimultigameid = 0
-                                multimultigameid2 = 0
-                                multimultigameid3 = 0
-                                multimultigameid4 = 0
-                                for entry in multimultiplayerlist:
-                                        count += 1
-                                        if count == 1:
-                                                multimultiname = entry[1]
-                                                multimultinetname = entry[3]
-                                                multimultigameid = entry[5]
-                                        if count == 2:
-                                                multimultiname2 = entry[1]
-                                                multimultinetname2 = entry[3]
-                                                multimultigameid2 = entry[5]
-                                        if count == 3:
-                                                multimultiname3 = entry[1]
-                                                multimultinetname3 = entry[3]
-                                                multimultigameid3 = entry[5]
-                                        if count == 4:
-                                                multimultiname4 = entry[1]
-                                                multimultinetname4 = entry[3]
-                                                multimultigameid4 = entry[5]
-                                if((name3 == multimultiname and gameid3 == multimultigameid) or (name3 == multimultiname2 and gameid3 == multimultigameid2) or (name3 == multimultiname3 and gameid3 == multimultigameid3) or (name3 == multimultiname4 and gameid3 == multimultigameid4)):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name3))
-                                        charcount = 2
-                                if(netname3 == multimultinetname):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
-                                        charcount = 2
-                                if(netname3 == multimultinetname2):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
-                                        charcount = 2
-                                if(netname3 == multimultinetname3):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
-                                        charcount = 2
-                                if(netname3 == multimultinetname4):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
-                                        charcount = 2
+                                        irc.reply("No Players Logged in on AbandonedPlayBot", private=True)
                 if charcount == 3:
-                        if gameid3 == gameid:
-                                try:
-                                        for entry in playerspagelist:
-                                                if ">{0}<".format(name3) in entry:
-                                                        namecheck3 = True
-                                except TypeError:
-                                        webworks = False
-                                if(namecheck3 is False and webworks is True):
-                                        irc.error("LOGIN ERROR: {0} does not exist".format(name3))
-                                        charcount = 2
-                                if charcount == 3:
-                                        if(supynick3 != supynick and name3 != name and supynick3 != supynick2 and name3 != name2):
-                                                char3 = True
-                                                self.usecommand(irc, "login {0} {1}".format(name3, pswd3), 3 )
-                                        if(supynick3 == supynick or name3 == name):
-                                                charcount = 2
-                                                irc.error("Character {0} is already logged in".format(name))
-                                        if(supynick3 == supynick2 or name3 == name2):
-                                                charcount = 2
-                                                irc.error("Character {0} is already logged in".format(name2))
+                        if(supynick3 != supynick and name3 != name and supynick3 != supynick2 and name3 != name2):
+                                char3 = True
+                                self.usecommand(irc, "login {0} {1}".format(name3, pswd3), 3 )
+                                if autostartmode is True:
+                                    self.configwrite2()
+                        if(supynick3 == supynick or name3 == name):
+                                charcount = 2
+                                irc.error("Character {0} is already logged in".format(name))
+                        if(supynick3 == supynick2 or name3 == name2):
+                                charcount = 2
+                                irc.error("Character {0} is already logged in".format(name2))
                 if charcount == 2:
                         char3 = False
                         netname3 = None
@@ -1571,129 +1605,74 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         return
 
         if charcount == 4:
-                netcheck = False
-                nickname4 = msg.nick
                 netname4 = self._getIrcName(irc)
+                nickname4 = msg.nick
                 supynick4 = irc.nick
                 otherIrc4 = self._getIrc(netname4)
                 namecheck4 = False
+                Owner4 = irc.getCallback('Owner')
 
-                for entry in gamelist:
-                        if entry[0] in netname4.lower():
-                                channame4 = entry[3]
-                                botname4 = entry[4]
-                                gameid4 = entry[5]
-                                netcheck = True
+                if "undernet" in netname4.lower():
+                        irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                        charcount = 3
+                if "quakenet" in netname4.lower():
+                        irc.error("You need to use the QuakeNet version of PlayBot")
+                        charcount = 3
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
+                if charcount == 4:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
 
-                try:
-                        if(name4 is None or pswd4 is None):
-                                name4 = args2[0]
-                                pswd4 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> multigameplaybotmulti login CharName Password" )
-                        
-                if netcheck is True:
+                        try:
+                                if(name4 is None or pswd4 is None):
+                                        name4 = args2[0]
+                                        pswd4 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> abandonedplaybotmulti login CharName Password" )
+                                
                         self.webdata(irc)
-                if netcheck is False:
-                        irc.error("Networks supported: {0}".format(netlist))
-                        if "quakenet" in netname4.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
-                if(name4 is None or pswd4 is None or netcheck is False):
-                        charcount = 3
-                        irc.error("Login Failed")
-                if gameid4 != gameid:
-                        charcount = 3
-                        irc.error("You can only use multiple players on {0}".format(networkname))
+                        if(name4 is None or pswd4 is None):
+                                charcount = 3
+                                irc.error("Login Failed")
+                if charcount == 4:
+                        try:
+                                for entry in playerspagelist:
+                                        if ">{0}<".format(name4) in entry:
+                                                namecheck4 = True
+                        except TypeError:
+                                webworks = False
+                        if(namecheck4 is False and webworks is True):
+                                irc.error("LOGIN ERROR: {0} does not exist".format(name4))
+                                charcount = 3
                 if charcount == 4:
                         if pbcount >= 2:
                                 singleplayerlist = self.singleread(irc)
                                 try:
                                         singlename = singleplayerlist[0][1]
                                         singlenetname = singleplayerlist[0][3]
-                                        singlegameid = singleplayerlist[0][5]
-                                        if(gameid4 == singlegameid and name4 == singlename):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(name4))
+                                        if(name4 == singlename):
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(name4))
                                                 charcount = 3
                                         if(netname4 == singlenetname):
-                                                irc.error("Character {0} is already logged in on MultiGamePlayBot".format(singlename))
+                                                irc.error("Character {0} is already logged in on AbandonedPlayBot".format(singlename))
                                                 charcount = 3
                                 except IndexError:
-                                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
-                        if pbcount >= 2:
-                                multimultiplayerlist = self.multimultiread(irc)
-                                count = 0
-                                multimultiname = None
-                                multimultiname2 = None
-                                multimultiname3 = None
-                                multimultiname4 = None
-                                multimultinetname = None
-                                multimultinetname2 = None
-                                multimultinetname3 = None
-                                multimultinetname4 = None
-                                multimultigameid = 0
-                                multimultigameid2 = 0
-                                multimultigameid3 = 0
-                                multimultigameid4 = 0
-                                for entry in multimultiplayerlist:
-                                        count += 1
-                                        if count == 1:
-                                                multimultiname = entry[1]
-                                                multimultinetname = entry[3]
-                                                multimultigameid = entry[5]
-                                        if count == 2:
-                                                multimultiname2 = entry[1]
-                                                multimultinetname2 = entry[3]
-                                                multimultigameid2 = entry[5]
-                                        if count == 3:
-                                                multimultiname3 = entry[1]
-                                                multimultinetname3 = entry[3]
-                                                multimultigameid3 = entry[5]
-                                        if count == 4:
-                                                multimultiname4 = entry[1]
-                                                multimultinetname4 = entry[3]
-                                                multimultigameid4 = entry[5]
-                                if((name4 == multimultiname and gameid4 == multimultigameid) or (name4 == multimultiname2 and gameid4 == multimultigameid2) or (name4 == multimultiname3 and gameid4 == multimultigameid3) or (name4 == multimultiname4 and gameid4 == multimultigameid4)):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name4))
-                                        charcount = 3
-                                if(netname4 == multimultinetname):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
-                                        charcount = 3
-                                if(netname4 == multimultinetname2):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
-                                        charcount = 3
-                                if(netname4 == multimultinetname3):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
-                                        charcount = 3
-                                if(netname4 == multimultinetname4):
-                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
-                                        charcount = 3
+                                        irc.reply("No Players Logged in on AbandonedPlayBot", private=True)
                 if charcount == 4:
-                        if gameid4 == gameid:
-                                try:
-                                        for entry in playerspagelist:
-                                                if ">{0}<".format(name4) in entry:
-                                                        namecheck4 = True
-                                except TypeError:
-                                        webworks = False
-                                if(namecheck4 is False and webworks is True):
-                                        irc.error("LOGIN ERROR: {0} does not exist".format(name4))
-                                        charcount = 3
-                                if charcount == 4:
-                                        if(supynick4 != supynick and name4 != name and supynick4 != supynick2 and name4 != name2 and supynick4 != supynick3 and name4 != name3):
-                                                char4 = True
-                                                self.usecommand(irc, "login {0} {1}".format(name4, pswd4), 4 )
-                                        if(supynick4 == supynick or name4 == name):
-                                                charcount = 3
-                                                irc.error("Character {0} is already logged in".format(name))
-                                        if(supynick4 == supynick2 or name4 == name2):
-                                                charcount = 3
-                                                irc.error("Character {0} is already logged in".format(name2))
-                                        if(supynick4 == supynick3 or name4 == name3):
-                                                charcount = 3
-                                                irc.error("Character {0} is already logged in".format(name3))
+                        if(supynick4 != supynick and name4 != name and supynick4 != supynick2 and name4 != name2 and supynick4 != supynick3 and name4 != name3):
+                                char4 = True
+                                self.usecommand(irc, "login {0} {1}".format(name4, pswd4), 4 )
+                                if autostartmode is True:
+                                    self.configwrite2()
+                        if(supynick4 == supynick or name4 == name):
+                                charcount = 3
+                                irc.error("Character {0} is already logged in".format(name))
+                        if(supynick4 == supynick2 or name4 == name2):
+                                charcount = 3
+                                irc.error("Character {0} is already logged in".format(name2))
+                        if(supynick4 == supynick3 or name4 == name3):
+                                charcount = 3
+                                irc.error("Character {0} is already logged in".format(name3))
                 if charcount == 3:
                         char4 = False
                         netname4 = None
@@ -1710,69 +1689,8 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 time.sleep(3) # Needed
                 self.usecommand(irc, "whoami", charcount)
                 irc.reply("Player Character {0} has logged in".format(charcount), private=True)
-        if charcount == 1 and loginsettingslist is True:
-                if blackbuyspend is True:
-                        irc.reply("BlackBuy Spend Mode Activated.  To turn it off use 'setoption blackbuy false' command", private=True)
-                if blackbuyspend is False:
-                        irc.reply("BlackBuy Spend Mode Deactivated.  To turn it off use 'setoption blackbuy true' command", private=True)
-                if blackbuyspend14 is True:
-                        irc.reply("BlackBuy Spend 14 Mode Activated.  To turn it off use 'setoption blackbuy14 false' command", private=True)
-                if blackbuyspend14 is False:
-                        irc.reply("BlackBuy Spend 14 Mode Deactivated.  To turn it off use 'setoption blackbuy14 true' command", private=True)
-                if bottextmode is True:
-                        irc.reply("Bot Text Mode Activated.  To turn it off use 'setoption bottext false' command", private=True)
-                if buylife is True:
-                        irc.reply("Buy Life Mode Activated.  To turn it off use 'setoption buylife false' command", private=True)
-                if buylife is False:
-                        irc.reply("Buy Life Mode Deactivated.  To turn it on use 'setoption buylife true' command", private=True)
-                if buyluck is True:
-                        irc.reply("Buy Luck Potions Mode Activated.  To turn it off use 'setoption buyluck false' command", private=True)
-                if buyluck is False:
-                        irc.reply("Buy Luck Potions Mode Deactivated.  To turn it on use 'setoption buyluck true' command", private=True)
-                if buypower is True:
-                        irc.reply("Buy Power Potions Mode Activated.  To turn it off use 'setoption buypower false' command", private=True)
-                if buypower is False:
-                        irc.reply("Buy Power Potions Mode Deactivated.  To turn it on use 'setoption buypower true' command", private=True)
-                if creepattack is True:
-                        irc.reply("CreepAttack Mode Activated.  To turn it off use 'setoption creepattack false' command", private=True)
-                if creepattack is False:
-                        irc.reply("CreepAttack Mode Deactivated.  To turn it on use 'setoption creepattack true' command", private=True)
-                if errortextmode is True:
-                        irc.reply("Error Text Mode Activated.  To turn it off use 'setoption errortext false' command", private=True)
-                if expbuy is True:
-                        irc.reply("Experience Buying Mode Activated.  To turn it off use 'setoption expbuy false' command", private=True)
-                if expbuy is False:
-                        irc.reply("Experience Buying Mode Deactivated.  To turn it on use 'setoption expbuy true' command", private=True)
-                if fightmode is True:
-                        irc.reply("Fighting Mode Activated.  To turn it off use 'setoption fights false' command", private=True)
-                if fightmode is False:
-                        irc.reply("Fighting Mode Deactivated.  To turn it on use 'setoption fights true' command", private=True)
-                if getgems is True:
-                        irc.reply("GetGems Mode Activated.  To turn it off use 'setoption getgems false' command", private=True)
-                if getgems is False:
-                        irc.reply("GetGems Mode Deactivated.  To turn it on use 'setoption getgems true' command", private=True)
-                if intervaltext is True:
-                        irc.reply("Interval Text Mode Activated.  To turn it off use 'setoption intervaltext false' command", private=True)
-                if pmtextmode is True:
-                        irc.reply("PMs from GameBot Mode Activated.  To turn it off use 'setoption pmtext false' command", private=True)
-                if townworkswitch is True:
-                        irc.reply("Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", private=True)
-                if townworkswitch is False:
-                        irc.reply("Town/Forest Switch Mode Activated.  To change to Town/Work use 'setoption townwork true' command", private=True)
-                if xpupgrade is True:
-                        irc.reply("XPUpgrade Mode Activated.  To turn it off use 'setoption xpupgrade false' command", private=True)
-                if xpupgrade is False:
-                        irc.reply("XPUpgrade Mode Deactivated.  To turn it on use 'setoption xpupgrade true' command", private=True)
-                irc.reply("Current Goldsave: {0}.  If you want to change it use 'setoption goldsave number' command".format(goldsave), private=True)
-                irc.reply("Current Item Buy Level: {0}.  If you want to change it use 'setoption itembuy number' command".format(setbuy), private=True)
-                irc.reply("Current Scrolls Buy ItemScore: {0}.  If you want to change it use 'setoption scrollssum number' command".format(scrollssum), private=True)
-                irc.reply("Current SlaySum Minimum ItemScore: {0}.  If you want to change it use 'setoption slaysum number' command".format(slaysum), private=True)
-                irc.reply("Current XPSpend for xpget item upgrades: {0}.  If you want to change it use 'setoption xpspend number' command".format(xpspend), private=True)
-                irc.reply(" ", private=True)
-                irc.reply("For a list of PlayBot commands use <bot> multigameplaybotmulti help", private=True)
-                irc.reply(" ", private=True)
         if charcount == 1:
-                self.versionchecker(irc)
+                self.loginstart(irc)
         if charcount >= 5:
             irc.error("You can only play with 4 character.")
             charcount = 4
@@ -1780,6 +1698,92 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         self.main(irc)
 
     login = wrap(login, [("checkCapability", "admin"), "text"])
+
+    def loginstart(self, irc):
+        global fightmode
+        global setbuy
+        global buylife
+        global blackbuyspend
+        global blackbuyspend14
+        global getgems
+        global scrollssum
+        global xpupgrade
+        global xpspend
+        global intervaltext
+        global townworkswitch
+        global goldsave
+        global creepattack
+        global buyluck
+        global buypower
+        global expbuy
+        global slaysum
+        global loginsettingslist
+        global bottextmode
+        global errortextmode
+        global pmtextmode
+
+        if loginsettingslist is True:
+                if blackbuyspend is True:
+                        self.reply(irc, "BlackBuy Spend Mode Activated.  To turn it off use 'setoption blackbuy false' command", 1)
+                if blackbuyspend is False:
+                        self.reply(irc, "BlackBuy Spend Mode Deactivated.  To turn it off use 'setoption blackbuy true' command", 1)
+                if blackbuyspend14 is True:
+                        self.reply(irc, "BlackBuy Spend 14 Mode Activated.  To turn it off use 'setoption blackbuy14 false' command", 1)
+                if blackbuyspend14 is False:
+                        self.reply(irc, "BlackBuy Spend 14 Mode Deactivated.  To turn it off use 'setoption blackbuy14 true' command", 1)
+                if bottextmode is True:
+                        self.reply(irc, "Bot Text Mode Activated.  To turn it off use 'setoption bottext false' command", 1)
+                if buylife is True:
+                        self.reply(irc, "Buy Life Mode Activated.  To turn it off use 'setoption buylife false' command", 1)
+                if buylife is False:
+                        self.reply(irc, "Buy Life Mode Deactivated.  To turn it on use 'setoption buylife true' command", 1)
+                if buyluck is True:
+                        self.reply(irc, "Buy Luck Potions Mode Activated.  To turn it off use 'setoption buyluck false' command", 1)
+                if buyluck is False:
+                        self.reply(irc, "Buy Luck Potions Mode Deactivated.  To turn it on use 'setoption buyluck true' command", 1)
+                if buypower is True:
+                        self.reply(irc, "Buy Power Potions Mode Activated.  To turn it off use 'setoption buypower false' command", 1)
+                if buypower is False:
+                        self.reply(irc, "Buy Power Potions Mode Deactivated.  To turn it on use 'setoption buypower true' command", 1)
+                if creepattack is True:
+                        self.reply(irc, "CreepAttack Mode Activated.  To turn it off use 'setoption creepattack false' command", 1)
+                if creepattack is False:
+                        self.reply(irc, "CreepAttack Mode Deactivated.  To turn it on use 'setoption creepattack true' command", 1)
+                if errortextmode is True:
+                        self.reply(irc, "Error Text Mode Activated.  To turn it off use 'setoption errortext false' command", 1)
+                if expbuy is True:
+                        self.reply(irc, "Experience Buying Mode Activated.  To turn it off use 'setoption expbuy false' command", 1)
+                if expbuy is False:
+                        self.reply(irc, "Experience Buying Mode Deactivated.  To turn it on use 'setoption expbuy true' command", 1)
+                if fightmode is True:
+                        self.reply(irc, "Fighting Mode Activated.  To turn it off use 'setoption fights false' command", 1)
+                if fightmode is False:
+                        self.reply(irc, "Fighting Mode Deactivated.  To turn it on use 'setoption fights true' command", 1)
+                if getgems is True:
+                        self.reply(irc, "GetGems Mode Activated.  To turn it off use 'setoption getgems false' command", 1)
+                if getgems is False:
+                        self.reply(irc, "GetGems Mode Deactivated.  To turn it on use 'setoption getgems true' command", 1)
+                if intervaltext is True:
+                        self.reply(irc, "Interval Text Mode Activated.  To turn it off use 'setoption intervaltext false' command", 1)
+                if pmtextmode is True:
+                        self.reply(irc, "PMs from GameBot Mode Activated.  To turn it off use 'setoption pmtext false' command", 1)
+                if townworkswitch is True:
+                        self.reply(irc, "Town/Work Switch Mode Activated.  To change to Town/Forest use 'setoption townforest true' command", 1)
+                if townworkswitch is False:
+                        self.reply(irc, "Town/Forest Switch Mode Activated.  To change to Town/Work use 'setoption townwork true' command", 1)
+                if xpupgrade is True:
+                        self.reply(irc, "XPUpgrade Mode Activated.  To turn it off use 'setoption xpupgrade false' command", 1)
+                if xpupgrade is False:
+                        self.reply(irc, "XPUpgrade Mode Deactivated.  To turn it on use 'setoption xpupgrade true' command", 1)
+                self.reply(irc, "Current Goldsave: {0}.  If you want to change it use 'setoption goldsave number' command".format(goldsave), 1)
+                self.reply(irc, "Current Item Buy Level: {0}.  If you want to change it use 'setoption itembuy number' command".format(setbuy), 1)
+                self.reply(irc, "Current Scrolls Buy ItemScore: {0}.  If you want to change it use 'setoption scrollssum number' command".format(scrollssum), 1)
+                self.reply(irc, "Current SlaySum Minimum ItemScore: {0}.  If you want to change it use 'setoption slaysum number' command".format(slaysum), 1)
+                self.reply(irc, "Current XPSpend for xpget item upgrades: {0}.  If you want to change it use 'setoption xpspend number' command".format(xpspend), 1)
+                self.reply(irc, " ", 1)
+                self.reply(irc, "For a list of PlayBot commands use <bot> abandonedplaybotmulti help", 1)
+                self.reply(irc, " ", 1)
+        self.versionchecker(irc)
 
     def logoutchar(self, irc, msg, args):
         """takes no arguments
@@ -1804,6 +1808,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global pswd3
         global pswd4
         global gameactive
+        global autostartmode
         
         if gameactive is False:
             irc.error("You are not logged in")
@@ -1837,7 +1842,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         pswd = None
                         gameactive = False
                         try:
-                            schedule.removeEvent('loopmgm')
+                            schedule.removeEvent('loopam')
                         except KeyError:
                             irc.error("You are not logged in")
                         self.multieraser(irc)
@@ -1846,13 +1851,18 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             irc.error("All Characters have already been Logged Out")
         if(charcount >= 1 and charcount <= 4):
             charcount -= 1
+            self.configwrite2()
+        if charcount == 0:
+            if autostartmode is True:
+                    autostartmode = False
+                    self.configwrite()
 
     logoutchar = wrap(logoutchar, [("checkCapability", "admin")])
 
     def logoutgame(self, irc, msg, args, num):
         """<charnumber>
 
-        Logs you out of MultiRPG.   Charnumber is 1 to 4, you can see which charnumber belongs to which char in settings.
+        Logs you out of IdleRPG.   Charnumber is 1 to 4, you can see which charnumber belongs to which char in settings.
         """
         global gameactive
         
@@ -1863,160 +1873,95 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
     logoutgame = wrap(logoutgame, [("checkCapability", "admin"), "positiveInt"])
 
-    if disablemgplayerslistcommand is False:
-            def mgplayerslist(self, irc, msg, args):
+    if disableaplayerslistcommand is False:
+            def aplayerslist(self, irc, msg, args):
                 """takes no arguments
 
-                Lists players on all MultiGame plugins loaded
+                Lists players on all Abandoned plugins loaded
                 """
 
-                global multigame
-                global multigamemulti
-                global multigamemultimulti
+                global abandoned
+                global abandonedmulti
 
                 self.playbotcheck(irc)
                 
-                if multigame is True:
-                        mgfileprefix3 = "multigamesingleplayers.txt"
+                if abandoned is True:
+                        afileprefix3 = "abandonedsingleplayers.txt"
                         path = conf.supybot.directories.data
-                        mgfilename3 = path.dirize(mgfileprefix3)
-                        mgcheck = True
+                        afilename3 = path.dirize(afileprefix3)
+                        acheck = True
                         try:
-                                f = open(mgfilename3,"rb")
+                                f = open(afilename3,"rb")
                                 playerListS = pickle.load(f)
                                 f.close()
                         except:
                                 playerListS = []
                         try:
-                                mgsinglename = playerListS[0][1]
-                                mgsinglenetname = playerListS[0][3]
+                                asinglename = playerListS[0][1]
+                                asinglenetname = playerListS[0][3]
                         except IndexError:
-                                irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                                irc.reply("No Players Logged in on AbandonedPlayBot", private=True)
                                 irc.reply(" ", private=True)
                                 irc.reply(" ", private=True)
-                                mgcheck = False
-                        if mgcheck is True:
-                                irc.reply("MultiGame PlayBot Single", private=True)
+                                acheck = False
+                        if acheck is True:
+                                irc.reply("Abandoned PlayBot Single", private=True)
                                 irc.reply(" ", private=True)
-                                irc.reply("Player Character - {0}.  Network {1}".format(mgsinglename, mgsinglenetname), private=True)
+                                irc.reply("Player Character - {0}.  Network {1}".format(asinglename, asinglenetname), private=True)
                                 irc.reply(" ", private=True)
                                 irc.reply(" ", private=True)
 
-                if multigamemulti is True:
-                        mgfileprefix4 = "multigamemultiplayers.txt"
+                if abandonedmulti is True:
+                        afileprefix4 = "abandonedmultiplayers.txt"
                         path = conf.supybot.directories.data
-                        mgfilename4 = path.dirize(mgfileprefix4)
-                        mgmcheck = False
+                        afilename4 = path.dirize(afileprefix4)
+                        amcheck = False
                         try:
-                                f = open(mgfilename4,"rb")
+                                f = open(afilename4,"rb")
                                 playerListM = pickle.load(f)
                                 f.close()
                         except:
                                 playerListM = []
                         count = 0
-                        mgmultiname = None
-                        mgmultiname2 = None
-                        mgmultiname3 = None
-                        mgmultiname4 = None
-                        mgmultinetname = None
-                        mgmultinetname2 = None
-                        mgmultinetname3 = None
-                        mgmultinetname4 = None
+                        amultiname = None
+                        amultiname2 = None
+                        amultiname3 = None
+                        amultiname4 = None
+                        amultinetname = None
+                        amultinetname2 = None
+                        amultinetname3 = None
+                        amultinetname4 = None
                         for entry in playerListM:
                                 count += 1
                                 if count == 1:
-                                        mgmultiname = entry[1]
-                                        mgmultinetname = entry[3]
-                                        mgmcheck = True
+                                        amultiname = entry[1]
+                                        amultinetname = entry[3]
+                                        amcheck = True
                                 if count == 2:
-                                        mgmultiname2 = entry[1]
-                                        mgmultinetname2 = entry[3]
+                                        amultiname2 = entry[1]
+                                        amultinetname2 = entry[3]
                                 if count == 3:
-                                        mgmultiname3 = entry[1]
-                                        mgmultinetname3 = entry[3]
+                                        amultiname3 = entry[1]
+                                        amultinetname3 = entry[3]
                                 if count == 4:
-                                        mgmultiname4 = entry[1]
-                                        mgmultinetname4 = entry[3]
-                        if mgmcheck is False:
-                                irc.reply("No Players Logged in on MultiGamePlayBotMulti", private=True)
+                                        amultiname4 = entry[1]
+                                        amultinetname4 = entry[3]
+                        if amcheck is False:
+                                irc.reply("No Players Logged in on AbandonedPlayBotMulti", private=True)
+                        if amcheck is True:
+                                irc.reply("Abandoned PlayBot Multi", private=True)
                                 irc.reply(" ", private=True)
-                                irc.reply(" ", private=True)
-                        if mgmcheck is True:
-                                irc.reply("MultiGame PlayBot Multi", private=True)
-                                irc.reply(" ", private=True)
-                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
-                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
-                                irc.reply(" ", private=True)
-                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(amultiname, amultinetname, amultiname2, amultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(amultiname3, amultinetname3, amultiname4, amultinetname4), private=True)
 
-                if multigamemultimulti is True:
-                        mgfileprefix5 = "multigamemultimultiplayers.txt"
-                        path = conf.supybot.directories.data
-                        mgfilename5 = path.dirize(mgfileprefix5)
-                        mgmmcheck = False
-                        try:
-                                f = open(mgfilename5,"rb")
-                                playerListMM = pickle.load(f)
-                                f.close()
-                        except:
-                                playerListMM = []
-                        count = 0
-                        mgmultimultiname = None
-                        mgmultimultiname2 = None
-                        mgmultimultiname3 = None
-                        mgmultimultiname4 = None
-                        mgmultimultinetname = None
-                        mgmultimultinetname2 = None
-                        mgmultimultinetname3 = None
-                        mgmultimultinetname4 = None
-                        for entry in playerListMM:
-                                count += 1
-                                if count == 1:
-                                        mgmultimultiname = entry[1]
-                                        mgmultimultinetname = entry[3]
-                                        mgmmcheck = True
-                                if count == 2:
-                                        mgmultimultiname2 = entry[1]
-                                        mgmultimultinetname2 = entry[3]
-                                if count == 3:
-                                        mgmultimultiname3 = entry[1]
-                                        mgmultimultinetname3 = entry[3]
-                                if count == 4:
-                                        mgmultimultiname4 = entry[1]
-                                        mgmultimultinetname4 = entry[3]
-                        if mgmmcheck is False:
-                                irc.reply("No Players Logged in on MultiGamePlayBotMultiMulti", private=True)
-                        if mgmmcheck is True:
-                                irc.reply("MultiGame PlayBot MultiMulti", private=True)
-                                irc.reply(" ", private=True)
-                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultimultiname, mgmultimultinetname, mgmultimultiname2, mgmultimultinetname2), private=True)
-                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultimultiname3, mgmultimultinetname3, mgmultimultiname4, mgmultimultinetname4), private=True)
-
-            mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
-
-    def multimultiread(self, irc):
-        try:
-                f = open(filename5,"rb")
-                playerListMM = pickle.load(f)
-                f.close()
-        except IOError:
-                playerListMM = []
-        except EOFError:
-                playerListMM = []
-        except ValueError:
-                playerListMM = []
-        return playerListMM
+            aplayerslist = wrap(aplayerslist, [("checkCapability", "admin")])
 
     def singleread(self, irc):
         try:
                 f = open(filename3,"rb")
                 playerListS = pickle.load(f)
                 f.close()
-        except IOError:
-                playerListS = []
-        except EOFError:
-                playerListS = []
-        except ValueError:
+        except:
                 playerListS = []
         return playerListS
 
@@ -2033,20 +1978,16 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global netname2
         global netname3
         global netname4
-        global gameid
-        global gameid2
-        global gameid3
-        global gameid4
       
         playerListM = []
         if char1 is True:
-                playerListM.append( ( "name", name, "netname", netname, "gameid", gameid ) )
+                playerListM.append( ( "name", name, "netname", netname ) )
         if char2 is True:
-                playerListM.append( ( "name2", name2, "netname2", netname2, "gameid2", gameid2 ) )
+                playerListM.append( ( "name2", name2, "netname2", netname2 ) )
         if char3 is True:
-                playerListM.append( ( "name3", name3, "netname3", netname3, "gameid3", gameid3 ) )
+                playerListM.append( ( "name3", name3, "netname3", netname3 ) )
         if char4 is True:
-                playerListM.append( ( "name4", name4, "netname4", netname4, "gameid4", gameid4 ) )
+                playerListM.append( ( "name4", name4, "netname4", netname4 ) )
         f = open(filename4,"wb")
         pickle.dump(playerListM,f)
         f.close()
@@ -2056,16 +1997,16 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         f = open(filename4,"wb")
         pickle.dump(playerListM,f)
         f.close()
-        irc.reply("MultiGame PlayerListM Erased", private=True)
+        irc.reply("Abandoned PlayerListM Erased", private=True)
 
-    def mgmultierase(self, irc, msg, args):
+    def amultierase(self, irc, msg, args):
         """takes no arguments
 
         Erases playerList file
         """
         self.multieraser(irc)
 
-    mgmultierase = wrap(mgmultierase, [("checkCapability", "admin")])
+    amultierase = wrap(amultierase, [("checkCapability", "admin")])
 
     def fixlooper(self, irc, msg, args):
         """takes no arguments
@@ -2122,13 +2063,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
     def configcheck(self, irc):
         global channame
-        global channame2
-        global channame3
-        global channame4
-        global char1
-        global char2
-        global char3
-        global char4
         global autoconfig
 
         pingtime = conf.supybot.protocols.irc.ping.interval()
@@ -2137,15 +2071,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         notcommand = conf.supybot.reply.whenNotCommand()
 
         configchange = False
-        chanlist = []
-        if char1 is True:
-                chanlist.append(channame)
-        if char2 is True:
-                chanlist.append(channame2)
-        if char3 is True:
-                chanlist.append(channame3)
-        if char4 is True:
-                chanlist.append(channame4)
+        zombiecheck = False
+        for (channel, c) in ircdb.channels.items():
+                if c.lobotomized:
+                    if channel == channame:
+                                zombiecheck = True
 
         if autoconfig == 0:
                 self.replymulti(irc, "AutoConfig Off")
@@ -2164,18 +2094,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         conf.supybot.reply.whenNotCommand.set("False")
                         configchange = True
 
-
-                for entry in chanlist:
-                        zombiecheck = False
-                        for (channel, c) in ircdb.channels.items():
-                                if c.lobotomized:
-                                    if channel == entry:
-                                                zombiecheck = True
-                        if zombiecheck is False:
-                                    c = ircdb.channels.getChannel(entry)
-                                    c.lobotomized = True
-                                    ircdb.channels.setChannel(entry, c)
-                                    configchange = True
+                if zombiecheck is False:
+                            c = ircdb.channels.getChannel(channame)
+                            c.lobotomized = True
+                            ircdb.channels.setChannel(channame, c)
+                            configchange = True
 
         if autoconfig == 2 :
                 if commandflood is False:
@@ -2187,17 +2110,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 if notcommand is False:
                         conf.supybot.reply.whenNotCommand.set("True")
                         configchange = True
-                for entry in chanlist:
-                        zombiecheck = False
-                        for (channel, c) in ircdb.channels.items():
-                                if c.lobotomized:
-                                    if channel == entry:
-                                                zombiecheck = True
-                        if zombiecheck is True:
-                                    c = ircdb.channels.getChannel(entry)
-                                    c.lobotomized = False
-                                    ircdb.channels.setChannel(entry, c)
-                                    configchange = True
+                if zombiecheck is True:
+                            c = ircdb.channels.getChannel(channame)
+                            c.lobotomized = False
+                            ircdb.channels.setChannel(channame, c)
+                            configchange = True
 
         if autoconfig == 1 or autoconfig == 2:
                 if configchange is True:
@@ -2301,9 +2218,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
             Gives a list of Playbot commands
             """
-            irc.reply("PlayBot Commands List")
-            irc.reply(" ")
+            irc.reply("PlayBot Commands List", private=True)
+            irc.reply(" ", private=True)
             irc.reply("Area Switching Mode Off     - setoption townwork off", private=True)
+            irc.reply("Autostart Mode Off          - setoption autostart false", private=True)
+            irc.reply("Autostart Mode On           - setoption autostart true", private=True)
             irc.reply("BlackBuy Spend Mode Off     - setoption blackbuy false", private=True)
             irc.reply("BlackBuy Spend Mode On      - setoption blackbuy true", private=True)
             irc.reply("BlackBuy 14 Spend Mode Off  - setoption blackbuy14 false", private=True)
@@ -2319,7 +2238,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             irc.reply("CreepAttack Mode Off        - setoption creepattack false", private=True)
             irc.reply("CreepAttack Mode On         - setoption creepattack true", private=True)
             irc.reply("Erase Config File           - eraseconfig", private=True)
-            irc.reply("Erase PlayerList            - mgmultierase", private=True)
+            irc.reply("Erase PlayerList            - amultierase", private=True)
             irc.reply("Error Text Mode Off         - setoption errortext false", private=True)
             irc.reply("Error Text Mode On          - setoption errortext true", private=True)
             irc.reply("Experince Buying Mode Off   - setoption expbuy false", private=True)
@@ -2343,7 +2262,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             irc.reply("PlayBot Commands List       - help", private=True)
             irc.reply("Player's Items              - items", private=True)
             irc.reply("Player's Status             - status", private=True)
-            irc.reply("Players List                - mgplayerslist", private=True)
+            irc.reply("Players List                - aplayerslist", private=True)
             irc.reply("Set Creep Target            - setoption creep creepname", private=True)
             irc.reply("Set Goldsave                - setoption goldsave number", private=True)
             irc.reply("Set Item Buy Level          - setoption itembuy number", private=True)
@@ -2359,7 +2278,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             irc.reply("XPUpgrade Mode Off          - setoption xpupgrade false", private=True)
             irc.reply("XPUpgrade Mode On           - setoption xpupgrade true", private=True)
             irc.reply(" ", private=True)
-            irc.reply("If you want more information about a command use <bot> help multigameplaybotmulti <command> - ie /msg DudeRuss help multigameplaybotmulti settings", private=True)
+            irc.reply("If you want more information about a command use <bot> help abandonedplaybotmulti <command> - ie /msg DudeRuss help abandonedplaybotmulti settings", private=True)
 
     help = wrap(help)
 
@@ -2393,14 +2312,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             global townworkswitch
             global expbuy
             global goldsave
-            global netname
-            global netname2
-            global netname3
-            global netname4
             global slaysum
             global bottextmode
             global errortextmode
             global pmtextmode
+            global autostartmode
 
             irc.reply("Playbot Settings List", private=True)
             irc.reply(" ", private=True)
@@ -2410,16 +2326,16 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                     irc.reply("Area Switch Mode - Town/Forest", private=True)
             if townworkswitch is None:
                     irc.reply("Area Switch Mode - Deactivated", private=True)
-            irc.reply("BlackBuy Spend Mode - {0}      BlackBuy 14 Spend Mode - {1}".format(blackbuyspend, blackbuyspend14), private=True)
-            irc.reply("Bot Text Mode - {0}            Buy Life Mode - {1}".format(bottextmode, buylife), private=True)
-            irc.reply("Buy Luck Potion Mode - {0}     Buy Power Potion Mode - {1}".format(buyluck, buypower), private=True)
-            irc.reply("CreepAttack Mode - {0}         Error Text Mode - {1}".format(creepattack, errortextmode), private=True)
-            irc.reply("Experience Buying Mode - {0}   Fighting Mode - {1}".format(expbuy, fightmode), private=True)
-            irc.reply("GameBot PMs Mode - {0}         GetGems Mode - {1}".format(pmtextmode, getgems), private=True)
-            irc.reply("Goldsave - {0}                 Interval Text Mode - {1}".format(goldsave, intervaltext), private=True)
-            irc.reply("Item Buy Level - {0}".format(setbuy), private=True)
-            irc.reply("Player Character 1 - {0}, {1}.  Network {2}  Player Character 2 - {3}, {4}.  Network {5}".format(char1, name, netname, char2, name2, netname2), private=True)
-            irc.reply("Player Character 3 - {0}, {1}.  Network {2}  Player Character 4 - {3}, {4}.  Network {5}".format(char3, name3, netname3, char4, name4, netname4), private=True)
+            irc.reply("Autostart Mode - {0}           BlackBuy Spend Mode - {1}".format(autostartmode, blackbuyspend), private=True)
+            irc.reply("BlackBuy 14 Spend Mode - {0}   Bot Text Mode - {1}".format(blackbuyspend14, bottextmode), private=True)
+            irc.reply("Buy Life Mode - {0}            Buy Luck Potion Mode - {1}".format(buylife, buyluck), private=True)
+            irc.reply("Buy Power Potion Mode - {0}    CreepAttack Mode - {1}".format(buypower, creepattack), private=True)
+            irc.reply("Error Text Mode - {0}          Experience Buying Mode - {1}".format(errortextmode, expbuy), private=True)
+            irc.reply("Fighting Mode - {0}            GameBot PMs Mode - {1}".format(fightmode, pmtextmode), private=True)
+            irc.reply("GetGems Mode - {0}             Goldsave - {1}".format(getgems, goldsave), private=True)
+            irc.reply("Interval Text Mode - {0}       Item Buy Level - {1}".format(intervaltext, setbuy), private=True)
+            irc.reply("Player Character 1 - {0}, {1}  Player Character 2 - {2}, {3}".format(char1, name, char2, name2), private=True)
+            irc.reply("Player Character 3 - {0}, {1}  Player Character 4 - {2}, {3}".format(char3, name3, char4, name4), private=True)
             irc.reply("Scrolls Buy ItemScore - {0}    Set Creep Target - {1}".format(scrollssum, setcreeptarget), private=True)
             irc.reply("SlaySum Minimum - {0}".format(slaysum), private=True)
             irc.reply("XPSpend Upgrade Amount - {0}   XPUpgrade Mode - {1}".format(xpspend, xpupgrade), private=True)
@@ -2437,8 +2353,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global webworks
         global website
         global level
-        global fightlevellimit
-        global webssl
         global playbottext
         global errortextmode
         
@@ -2475,12 +2389,9 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                 del test[0:14]
                                         test2.append(test)        
 
-                if fightlevellimit is True:
-                        for entry in test2:
-                                if(int(entry[8]) >= level):
-                                        test3.append(entry)
-                if fightlevellimit is False:
-                        test3 = test2
+                for entry in test2:
+                        if(int(entry[8]) >= level):
+                                test3.append(entry)
                 for player in test3:
                         name_ = player[5]
 
@@ -2491,17 +2402,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                         # get raw player data from web, parse for relevant entry
                         try:
-                                if webssl is True:
-                                        context = ssl._create_unverified_context()
-                                        if python3 is False:
-                                                text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name_), context=context)
-                                        if python3 is True:
-                                                text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name_), context=context)
-                                else:
-                                        if python3 is False:
-                                                text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name_))
-                                        if python3 is True:
-                                                text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name_))
+                                context = ssl._create_unverified_context()
+                                if python3 is False:
+                                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name_), context=context)
+                                if python3 is True:
+                                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name_), context=context)
                                 playerview20 = text.read()
                                 text.close()
                                 if python3 is True:
@@ -2889,7 +2794,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                     self.reply(irc, "Fights Start at Level 25",num)
             self.reply(irc, "Gems: {0}  Gold: {1}  XP: {2}".format(gems, gold, xp),num)
             self.reply(irc, "Lotto1: {0}  Lotto2: {1}  Lotto3: {2}".format(lottonum1, lottonum2, lottonum3),num)
-            self.reply(irc, "Exp Used: {0} of 5  Scrolls: {1} of 5  Eat Used: {2} of 200".format(exp, scrolls, eatused), num)
+            self.reply(irc, "Exp Used: {0} of 5  Scrolls: {1} of 5  Eat Used: {2} of 5".format(exp, scrolls, eatused), num)
             self.reply(irc, "Items Sum Score: {0}  Expert Items Score: {1}  Upgrade Level: {2}  Attack/SlaySum Item Score: {3}".format(itemSums, expertSums, upgradelevel, int(attackslaySums)),num)
 
     def items(self, irc, msg, args):
@@ -3030,7 +2935,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             global playerspage
             global playerspagelist
             global website
-            global webssl
             global playbottext
             global errortextmode
             
@@ -3042,37 +2946,22 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             if python3 is False:
                 try:
                         if char1 is True:
-                                if webssl is True:
-                                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name), context=context)
-                                else:
-                                        text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name))
+                                text = urllib2.urlopen(website + "/playerview.php?player={0}".format(name), context=context)
                                 playerview = text.read()
                                 text.close()
                         if char2 is True:
-                                if webssl is True:
-                                        textb = urllib2.urlopen(website + "/playerview.php?player={0}".format(name2), context=context)
-                                else:
-                                        textb = urllib2.urlopen(website + "/playerview.php?player={0}".format(name2))
+                                textb = urllib2.urlopen(website + "/playerview.php?player={0}".format(name2), context=context)
                                 playerview2 = textb.read()
                                 textb.close()
                         if char3 is True:
-                                if webssl is True:
-                                        textc = urllib2.urlopen(website + "/playerview.php?player={0}".format(name3), context=context)
-                                else:
-                                        textc = urllib2.urlopen(website + "/playerview.php?player={0}".format(name3))
+                                textc = urllib2.urlopen(website + "/playerview.php?player={0}".format(name3), context=context)
                                 playerview3 = textc.read()
                                 textc.close()
                         if char4 is True:
-                                if webssl is True:
-                                        textd = urllib2.urlopen(website + "/playerview.php?player={0}".format(name4), context=context)
-                                else:
-                                        textd = urllib2.urlopen(website + "/playerview.php?player={0}".format(name4))
+                                textd = urllib2.urlopen(website + "/playerview.php?player={0}".format(name4), context=context)
                                 playerview4 = textd.read()
                                 textd.close()
-                        if webssl is True:
-                                text2 = urllib2.urlopen(website + "/players.php", context=context)
-                        else:
-                                text2 = urllib2.urlopen(website + "/players.php")
+                        text2 = urllib2.urlopen(website + "/players.php", context=context)
                         playerspage = text2.read()
                         text2.close()
                 except:
@@ -3080,41 +2969,26 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             if python3 is True:
                 try:
                         if char1 is True:
-                                if webssl is True:
-                                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name), context=context)
-                                else:
-                                        text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name))
+                                text = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name), context=context)
                                 playerview = text.read()
                                 text.close()
                                 playerview = playerview.decode("UTF-8")
                         if char2 is True:
-                                if webssl is True:
-                                        textb = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name2), context=context)
-                                else:
-                                        textb = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name2))
+                                textb = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name2), context=context)
                                 playerview2 = textb.read()
                                 textb.close()
                                 playerview2 = playerview2.decode("UTF-8")
                         if char3 is True:
-                                if webssl is True:
-                                        textc = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name3), context=context)
-                                else:
-                                        textc = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name3))
+                                textc = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name3), context=context)
                                 playerview3 = textc.read()
                                 textc.close()
                                 playerview3 = playerview3.decode("UTF-8")
                         if char4 is True:
-                                if webssl is True:
-                                        textd = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name4), context=context)
-                                else:
-                                        textd = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name4))
+                                textd = urllib.request.urlopen(website + "/playerview.php?player={0}".format(name4), context=context)
                                 playerview4 = textd.read()
                                 textd.close()
                                 playerview4 = playerview4.decode("UTF-8")
-                        if webssl is True:
-                                text2 = urllib.request.urlopen(website + "/players.php", context=context)
-                        else:
-                                text2 = urllib.request.urlopen(website + "/players.php")
+                        text2 = urllib.request.urlopen(website + "/players.php", context=context)
                         playerspage = text2.read()
                         text2.close()
                         playerspage = playerspage.decode("UTF-8")
@@ -3231,6 +3105,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global playerlist4
         global webworks
         global errortextmode
+        global playbottext
         
         if num == 1:
                 playerlists = playerlist
@@ -3586,7 +3461,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 except:
                         webworks = False
                         if errortextmode is True:
-                                self.replymulti(irc, "{0} Variable Error".format(num))
+                                self.replymulti(irc, "{0} - {1} Variable Error".format(playbottext, num))
 
                 try:
                                           # num  mysum   level   life   ability   ttl 
@@ -3735,47 +3610,47 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 #            self.reply(irc, "{0} atime {1}  stime {2}  ttl {3}".format(num, atime, stime, ttl), num)
             slaydisable = False
             
-            def lvlupgomgm1():
+            def lvlupgoam1():
                 self.lvlup(irc, 1)
-            def lvlupgomgm2():
+            def lvlupgoam2():
                 self.lvlup(irc, 2)
-            def lvlupgomgm3():
+            def lvlupgoam3():
                 self.lvlup(irc, 3)
-            def lvlupgomgm4():
+            def lvlupgoam4():
                 self.lvlup(irc, 4)
             
-            def attackgomgm1():
+            def attackgoam1():
                 self.attack(irc, 1, 1)
-            def attackgomgm2():
+            def attackgoam2():
                 self.attack(irc, 1, 2)
-            def attackgomgm3():
+            def attackgoam3():
                 self.attack(irc, 1, 3)
-            def attackgomgm4():
+            def attackgoam4():
                 self.attack(irc, 1, 4)
-            def attackgobmgm1():
+            def attackgobam1():
                 self.attack(irc, 2, 1)
-            def attackgobmgm2():
+            def attackgobam2():
                 self.attack(irc, 2, 2)
-            def attackgobmgm3():
+            def attackgobam3():
                 self.attack(irc, 2, 3)
-            def attackgobmgm4():
+            def attackgobam4():
                 self.attack(irc, 2, 4)
 
-            def slaygomgm1():
+            def slaygoam1():
                 self.slay(irc, 1, 1)
-            def slaygobmgm1():
+            def slaygobam1():
                 self.slay(irc, 2, 1)
-            def slaygomgm2():
+            def slaygoam2():
                 self.slay(irc, 1, 2)
-            def slaygobmgm2():
+            def slaygobam2():
                 self.slay(irc, 2, 2)
-            def slaygomgm3():
+            def slaygoam3():
                 self.slay(irc, 1, 3)
-            def slaygobmgm3():
+            def slaygobam3():
                 self.slay(irc, 2, 3)
-            def slaygomgm4():
+            def slaygoam4():
                 self.slay(irc, 1, 4)
-            def slaygobmgm4():
+            def slaygobam4():
                 self.slay(irc, 2, 4)
 
             if(ttl <= interval and ttl > 0):
@@ -3784,28 +3659,28 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                             self.replymulti(irc, "{0} - Set lvlup {1} timer. Going off in {2} minutes.".format(playbottext, num, ttl // 60))
                     if num == 1:
                         try:
-                            schedule.addEvent(lvlupgomgm1, timer, "lvlupmgm1")
+                            schedule.addEvent(lvlupgoam1, timer, "lvlupam1")
                         except AssertionError:
-                            schedule.removeEvent('lvlupmgm1')
-                            schedule.addEvent(lvlupgomgm1, timer, "lvlupmgm1")                        
+                            schedule.removeEvent('lvlupam1')
+                            schedule.addEvent(lvlupgoam1, timer, "lvlupam1")                        
                     if num == 2:
                         try:
-                            schedule.addEvent(lvlupgomgm2, timer, "lvlupmgm2")
+                            schedule.addEvent(lvlupgoam2, timer, "lvlupam2")
                         except AssertionError:
-                            schedule.removeEvent('lvlupmgm2')
-                            schedule.addEvent(lvlupgomgm2, timer, "lvlupmgm2")                        
+                            schedule.removeEvent('lvlupam2')
+                            schedule.addEvent(lvlupgoam2, timer, "lvlupam2")                        
                     if num == 3:
                         try:
-                            schedule.addEvent(lvlupgomgm3, timer, "lvlupmgm3")
+                            schedule.addEvent(lvlupgoam3, timer, "lvlupam3")
                         except AssertionError:
-                            schedule.removeEvent('lvlupmgm3')
-                            schedule.addEvent(lvlupgomgm3, timer, "lvlupmgm3")                        
+                            schedule.removeEvent('lvlupam3')
+                            schedule.addEvent(lvlupgoam3, timer, "lvlupam3")                        
                     if num == 4:
                         try:
-                            schedule.addEvent(lvlupgomgm4, timer, "lvlupmgm4")
+                            schedule.addEvent(lvlupgoam4, timer, "lvlupam4")
                         except AssertionError:
-                            schedule.removeEvent('lvlupmgm4')
-                            schedule.addEvent(lvlupgomgm4, timer, "lvlupmgm4")                        
+                            schedule.removeEvent('lvlupam4')
+                            schedule.addEvent(lvlupgoam4, timer, "lvlupam4")                        
             if(level >= 15 and atime <= interval and atime <= ttl and life > 10):
                     if powerpots == 0 and gold >= 1100 and buypower is True:
                         self.usecommand(irc, "buy power", num)
@@ -3820,54 +3695,54 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                     if powerpots == 0:
                             if num == 1:
                                 try:
-                                    schedule.addEvent(attackgomgm1, timer, "attackmgm1")
+                                    schedule.addEvent(attackgoam1, timer, "attackam1")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm1')
-                                    schedule.addEvent(attackgomgm1, timer, "attackmgm1")                        
+                                    schedule.removeEvent('attackam1')
+                                    schedule.addEvent(attackgoam1, timer, "attackam1")                        
                             if num == 2:
                                 try:
-                                    schedule.addEvent(attackgomgm2, timer, "attackmgm2")
+                                    schedule.addEvent(attackgoam2, timer, "attackam2")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm2')
-                                    schedule.addEvent(attackgomgm2, timer, "attackmgm2")                        
+                                    schedule.removeEvent('attackam2')
+                                    schedule.addEvent(attackgoam2, timer, "attackam2")                        
                             if num == 3:
                                 try:
-                                    schedule.addEvent(attackgomgm3, timer, "attackmgm3")
+                                    schedule.addEvent(attackgoam3, timer, "attackam3")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm3')
-                                    schedule.addEvent(attackgomgm3, timer, "attackmgm3")                        
+                                    schedule.removeEvent('attackam3')
+                                    schedule.addEvent(attackgoam3, timer, "attackam3")                        
                             if num == 4:
                                 try:
-                                    schedule.addEvent(attackgomgm4, timer, "attackmgm4")
+                                    schedule.addEvent(attackgoam4, timer, "attackam4")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm4')
-                                    schedule.addEvent(attackgomgm4, timer, "attackmgm4")                        
+                                    schedule.removeEvent('attackam4')
+                                    schedule.addEvent(attackgoam4, timer, "attackam4")                        
                     if powerpots == 1:
                             powerpots = 0
                             if num == 1:
                                 try:
-                                    schedule.addEvent(attackgobmgm1, timer, "attackmgm1")
+                                    schedule.addEvent(attackgobam1, timer, "attackam1")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm1')
-                                    schedule.addEvent(attackgobmgm1, timer, "attackmgm1")                        
+                                    schedule.removeEvent('attackam1')
+                                    schedule.addEvent(attackgobam1, timer, "attackam1")                        
                             if num == 2:
                                 try:
-                                    schedule.addEvent(attackgobmgm2, timer, "attackmgm2")
+                                    schedule.addEvent(attackgobam2, timer, "attackam2")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm2')
-                                    schedule.addEvent(attackgobmgm2, timer, "attackmgm2")                        
+                                    schedule.removeEvent('attackam2')
+                                    schedule.addEvent(attackgobam2, timer, "attackam2")                        
                             if num == 3:
                                 try:
-                                    schedule.addEvent(attackgobmgm3, timer, "attackmgm3")
+                                    schedule.addEvent(attackgobam3, timer, "attackam3")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm3')
-                                    schedule.addEvent(attackgobmgm3, timer, "attackmgm3")                        
+                                    schedule.removeEvent('attackam3')
+                                    schedule.addEvent(attackgobam3, timer, "attackam3")                        
                             if num == 4:
                                 try:
-                                    schedule.addEvent(attackgobmgm4, timer, "attackmgm4")
+                                    schedule.addEvent(attackgobam4, timer, "attackam4")
                                 except AssertionError:
-                                    schedule.removeEvent('attackmgm4')
-                                    schedule.addEvent(attackgobmgm4, timer, "attackmgm4")                        
+                                    schedule.removeEvent('attackam4')
+                                    schedule.addEvent(attackgobam4, timer, "attackam4")                        
 
             if(level >= 30 and attackslaySumlist >= 1000 and stime <= interval and stime <= ttl and slaydisable is False and life > 10):
                     if(mana == 0 and gold >= 1100 and attackslaySumlist < 6300000):
@@ -3880,56 +3755,56 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                     self.replymulti(irc, "{0} - Set slay {1} timer. Going off in {2} minutes.".format(playbottext, num, stime // 60))
                             if num == 1:
                                 try:
-                                    schedule.addEvent(slaygomgm1, timer, "slaymgm1")
+                                    schedule.addEvent(slaygoam1, timer, "slayam1")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm1')
-                                    schedule.addEvent(slaygomgm1, timer, "slaymgm1")
+                                    schedule.removeEvent('slayam1')
+                                    schedule.addEvent(slaygoam1, timer, "slayam1")
                             if num == 2:
                                 try:
-                                    schedule.addEvent(slaygomgm2, timer, "slaymgm2")
+                                    schedule.addEvent(slaygoam2, timer, "slayam2")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm2')
-                                    schedule.addEvent(slaygomgm2, timer, "slaymgm2")
+                                    schedule.removeEvent('slayam2')
+                                    schedule.addEvent(slaygoam2, timer, "slayam2")
                             if num == 3:
                                 try:
-                                    schedule.addEvent(slaygomgm3, timer, "slaymgm3")
+                                    schedule.addEvent(slaygoam3, timer, "slayam3")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm3')
-                                    schedule.addEvent(slaygomgm3, timer, "slaymgm3")
+                                    schedule.removeEvent('slayam3')
+                                    schedule.addEvent(slaygoam3, timer, "slayam3")
                             if num == 4:
                                 try:
-                                    schedule.addEvent(slaygomgm4, timer, "slaymgm4")
+                                    schedule.addEvent(slaygoam4, timer, "slayam4")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm4')
-                                    schedule.addEvent(slaygomgm4, timer, "slaymgm4")
+                                    schedule.removeEvent('slayam4')
+                                    schedule.addEvent(slaygoam4, timer, "slayam4")
                     if mana == 1:
                             if bottextmode is True:
                                     self.replymulti(irc, "{0} - Set slay {1} timer. Going off in {2} minutes.".format(playbottext, num, stime // 60))
                             mana = 0
                             if num == 1:
                                 try:
-                                    schedule.addEvent(slaygobmgm1, timer, "slaymgm1")
+                                    schedule.addEvent(slaygobam1, timer, "slayam1")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm1')
-                                    schedule.addEvent(slaygobmgm1, timer, "slaymgm1")
+                                    schedule.removeEvent('slayam1')
+                                    schedule.addEvent(slaygobam1, timer, "slayam1")
                             if num == 2:
                                 try:
-                                    schedule.addEvent(slaygobmgm2, timer, "slaymgm2")
+                                    schedule.addEvent(slaygobam2, timer, "slayam2")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm2')
-                                    schedule.addEvent(slaygobmgm2, timer, "slaymgm2")
+                                    schedule.removeEvent('slayam2')
+                                    schedule.addEvent(slaygobam2, timer, "slayam2")
                             if num == 3:
                                 try:
-                                    schedule.addEvent(slaygobmgm3, timer, "slaymgm3")
+                                    schedule.addEvent(slaygobam3, timer, "slayam3")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm3')
-                                    schedule.addEvent(slaygobmgm3, timer, "slaymgm3")
+                                    schedule.removeEvent('slayam3')
+                                    schedule.addEvent(slaygobam3, timer, "slayam3")
                             if num == 4:
                                 try:
-                                    schedule.addEvent(slaygobmgm4, timer, "slaymgm4")
+                                    schedule.addEvent(slaygobam4, timer, "slayam4")
                                 except AssertionError:
-                                    schedule.removeEvent('slaymgm4')
-                                    schedule.addEvent(slaygobmgm4, timer, "slaymgm4")
+                                    schedule.removeEvent('slayam4')
+                                    schedule.addEvent(slaygobam4, timer, "slayam4")
 
     def expertcalc(self, item):
         expertcalcsum = 0
@@ -4318,21 +4193,21 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
             interval = 60
             self.looper(irc)
 
-            def attackgomgm1():
+            def attackgoam1():
                 self.attack(irc, 1, 1)
-            def attackgomgm2():
+            def attackgoam2():
                 self.attack(irc, 1, 2)
-            def attackgomgm3():
+            def attackgoam3():
                 self.attack(irc, 1, 3)
-            def attackgomgm4():
+            def attackgoam4():
                 self.attack(irc, 1, 4)
-            def attackgobmgm1():
+            def attackgobam1():
                 self.attack(irc, 2, 1)
-            def attackgobmgm2():
+            def attackgobam2():
                 self.attack(irc, 2, 2)
-            def attackgobmgm3():
+            def attackgobam3():
                 self.attack(irc, 2, 3)
-            def attackgobmgm4():
+            def attackgobam4():
                 self.attack(irc, 2, 4)
 
             if(level >= 16 and life > 10):
@@ -4343,54 +4218,54 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                     if powerpots == 0:
                             if num == 1:
                                 try:
-                                        schedule.addEvent(attackgomgm1, 0, "attackmgm1")
+                                        schedule.addEvent(attackgoam1, 0, "attackam1")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm1')
-                                        schedule.addEvent(attackgomgm1, 0, "attackmgm1")                        
+                                        schedule.removeEvent('attackam1')
+                                        schedule.addEvent(attackgoam1, 0, "attackam1")                        
                             if num == 2:
                                 try:
-                                        schedule.addEvent(attackgomgm2, 0, "attackmgm2")
+                                        schedule.addEvent(attackgoam2, 0, "attackam2")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm2')
-                                        schedule.addEvent(attackgomgm2, 0, "attackmgm2")                        
+                                        schedule.removeEvent('attackam2')
+                                        schedule.addEvent(attackgoam2, 0, "attackam2")                        
                             if num == 3:
                                 try:
-                                        schedule.addEvent(attackgomgm3, 0, "attackmgm3")
+                                        schedule.addEvent(attackgoam3, 0, "attackam3")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm3')
-                                        schedule.addEvent(attackgomgm3, 0, "attackmgm3")                        
+                                        schedule.removeEvent('attackam3')
+                                        schedule.addEvent(attackgoam3, 0, "attackam3")                        
                             if num == 4:
                                 try:
-                                        schedule.addEvent(attackgomgm4, 0, "attackmgm4")
+                                        schedule.addEvent(attackgoam4, 0, "attackam4")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm4')
-                                        schedule.addEvent(attackgomgm4, 0, "attackmgm4")                        
+                                        schedule.removeEvent('attackam4')
+                                        schedule.addEvent(attackgoam4, 0, "attackam4")                        
                     if powerpots == 1:
                             powerpots = 0
                             if num == 1:
                                 try:
-                                        schedule.addEvent(attackgobmgm1, 0, "attackmgm1")
+                                        schedule.addEvent(attackgobam1, 0, "attackam1")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm1')
-                                        schedule.addEvent(attackgobmgm1, 0, "attackmgm1")                        
+                                        schedule.removeEvent('attackam1')
+                                        schedule.addEvent(attackgobam1, 0, "attackam1")                        
                             if num == 2:
                                 try:
-                                        schedule.addEvent(attackgobmgm2, 0, "attackmgm2")
+                                        schedule.addEvent(attackgobam2, 0, "attackam2")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm2')
-                                        schedule.addEvent(attackgobmgm2, 0, "attackmgm2")                        
+                                        schedule.removeEvent('attackam2')
+                                        schedule.addEvent(attackgobam2, 0, "attackam2")                        
                             if num == 3:
                                 try:
-                                        schedule.addEvent(attackgobmgm3, 0, "attackmgm3")
+                                        schedule.addEvent(attackgobam3, 0, "attackam3")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm3')
-                                        schedule.addEvent(attackgobmgm3, 0, "attackmgm3")                        
+                                        schedule.removeEvent('attackam3')
+                                        schedule.addEvent(attackgobam3, 0, "attackam3")                        
                             if num == 4:
                                 try:
-                                        schedule.addEvent(attackgobmgm4, 0, "attackmgm4")
+                                        schedule.addEvent(attackgobam4, 0, "attackam4")
                                 except AssertionError:
-                                        schedule.removeEvent('attackmgm4')
-                                        schedule.addEvent(attackgobmgm4, 0, "attackmgm4")                        
+                                        schedule.removeEvent('attackam4')
+                                        schedule.addEvent(attackgobam4, 0, "attackam4")                        
 
     def fight_fight(self, irc, num):
             global name
@@ -4516,7 +4391,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global expertSum4
         global ability
         global life
-        global fightlevellimit
 
         self.getitems2(num)
             
@@ -4551,59 +4425,31 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         newlists.sort( key=operator.itemgetter(2))
         if newlists != None:
                 for entry in newlists:
-                        if fightlevellimit is True:
-                                if(entry[3] >= level and entry[0] != namelist):
-                                        abilityadj = 0
-                                        if ability == "b":
-                                                if entry[5] == "p":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
+                        if(entry[3] >= level and entry[0] != namelist):
+                                abilityadj = 0
+                                if ability == "b":
+                                        if entry[5] == "p":
+                                                abilityadj = math.floor(fightSumTotal * 0.30)
 
-                                        if ability == "p":
-                                                if entry[5] == "r":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
-                                                
-                                        if ability == "r":
-                                                if entry[5] == "w":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
-                                                
-                                        if ability == "w":
-                                                if entry[5] == "b":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
+                                if ability == "p":
+                                        if entry[5] == "r":
+                                                abilityadj = math.floor(fightSumTotal * 0.30)
+                                        
+                                if ability == "r":
+                                        if entry[5] == "w":
+                                                abilityadj = math.floor(fightSumTotal * 0.30)
+                                        
+                                if ability == "w":
+                                        if entry[5] == "b":
+                                                abilityadj = math.floor(fightSumTotal * 0.30)
 
-                                        fightAdj = (fightSumTotal + abilityadj + upgradeSum1) * lifepercent
+                                fightAdj = (fightSumTotal + abilityadj + upgradeSum1) * lifepercent
 
-                                        try:
-                                                currdiff = fightAdj / entry[2]
-                                        except ZeroDivisionError:
-                                                currdiff = 0
-                                        test.append( (entry, currdiff) )
-
-                        if fightlevellimit is False:
-                                if(entry[0] != namelist):
-                                        abilityadj = 0
-                                        if ability == "b":
-                                                if entry[5] == "p":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
-
-                                        if ability == "p":
-                                                if entry[5] == "r":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
-                                                
-                                        if ability == "r":
-                                                if entry[5] == "w":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
-                                                
-                                        if ability == "w":
-                                                if entry[5] == "b":
-                                                        abilityadj = math.floor(fightSumTotal * 0.30)
-
-                                        fightAdj = (fightSumTotal + abilityadj + upgradeSum1) * lifepercent
-
-                                        try:
-                                                currdiff = fightAdj / entry[2]
-                                        except ZeroDivisionError:
-                                                currdiff = 0
-                                        test.append( (entry, currdiff) )
+                                try:
+                                        currdiff = fightAdj / entry[2]
+                                except ZeroDivisionError:
+                                        currdiff = 0
+                                test.append( (entry, currdiff) )
 
                 test.sort( key=operator.itemgetter(1))
 
@@ -4725,9 +4571,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         can be returned.
         """
         global botname
-        global botname2
-        global botname3
-        global botname4
         global name
         global pswd
         global name2
@@ -4850,19 +4693,19 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                         level2 = entry[2]
                                                         life2 = entry[3]
                                 lifebuyb = False
-                                if botname2 in chanmsgnick and "has challenged" in text and "is added to {0} clock".format(name2) in text: #rand challenge
+                                if botname in chanmsgnick and "has challenged" in text and "is added to {0} clock".format(name2) in text: #rand challenge
                                         lifebuyb = True
-                                if botname2 in chanmsgnick and "has attacked a" in text and "is added to {0} clock".format(name2) in text: #attack
+                                if botname in chanmsgnick and "has attacked a" in text and "is added to {0} clock".format(name2) in text: #attack
                                         lifebuyb = True
-                                if botname2 in chanmsgnick and "tried to slay a" in text and "is added to {0} clock".format(name2) in text: #slay
+                                if botname in chanmsgnick and "tried to slay a" in text and "is added to {0} clock".format(name2) in text: #slay
                                         lifebuyb = True
-                                if botname2 in chanmsgnick and "has been set upon by some" in text and "is added to {0}'s clock".format(name2) in text: #rand creep
+                                if botname in chanmsgnick and "has been set upon by some" in text and "is added to {0}'s clock".format(name2) in text: #rand creep
                                         lifebuyb = True
-                                if botname2 in chanmsgnick and "fights a random" in text and "is added to {0} clock".format(name2) in text: #rand god
+                                if botname in chanmsgnick and "fights a random" in text and "is added to {0} clock".format(name2) in text: #rand god
                                         lifebuyb = True
-                                if botname2 in chanmsgnick and "{0}".format(name2) in text and "have hunted down a bunch of" in text and "but they beat them badly!" in text: #team hunt
+                                if botname in chanmsgnick and "{0}".format(name2) in text and "have hunted down a bunch of" in text and "but they beat them badly!" in text: #team hunt
                                         lifebuyb = True
-                                if botname2 in chanmsgnick and "from {0}!".format(name2) in text and "XP and loses" in text: #tourney
+                                if botname in chanmsgnick and "from {0}!".format(name2) in text and "XP and loses" in text: #tourney
                                         lifebuyb = True
                                 if lifebuyb is True:
                                         if(level2 >= 15 and buylife is True and life2 >= 0):
@@ -4878,19 +4721,19 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                         level3 = entry[2]
                                                         life3 = entry[3]
                                 lifebuyc = False
-                                if botname3 in chanmsgnick and "has challenged" in text and "is added to {0} clock".format(name3) in text: #rand challenge
+                                if botname in chanmsgnick and "has challenged" in text and "is added to {0} clock".format(name3) in text: #rand challenge
                                         lifebuyc = True
-                                if botname3 in chanmsgnick and "has attacked a" in text and "is added to {0} clock".format(name3) in text: #attack
+                                if botname in chanmsgnick and "has attacked a" in text and "is added to {0} clock".format(name3) in text: #attack
                                         lifebuyc = True
-                                if botname3 in chanmsgnick and "tried to slay a" in text and "is added to {0} clock".format(name3) in text: #slay
+                                if botname in chanmsgnick and "tried to slay a" in text and "is added to {0} clock".format(name3) in text: #slay
                                         lifebuyc = True
-                                if botname3 in chanmsgnick and "has been set upon by some" in text and "is added to {0}'s clock".format(name3) in text: #rand creep
+                                if botname in chanmsgnick and "has been set upon by some" in text and "is added to {0}'s clock".format(name3) in text: #rand creep
                                         lifebuyc = True
-                                if botname3 in chanmsgnick and "fights a random" in text and "is added to {0} clock".format(name3) in text: #rand god
+                                if botname in chanmsgnick and "fights a random" in text and "is added to {0} clock".format(name3) in text: #rand god
                                         lifebuyc = True
-                                if botname3 in chanmsgnick and "{0}".format(name3) in text and "have hunted down a bunch of" in text and "but they beat them badly!" in text: #team hunt
+                                if botname in chanmsgnick and "{0}".format(name3) in text and "have hunted down a bunch of" in text and "but they beat them badly!" in text: #team hunt
                                         lifebuyc = True
-                                if botname3 in chanmsgnick and "from {0}!".format(name3) in text and "XP and loses" in text: #tourney
+                                if botname in chanmsgnick and "from {0}!".format(name3) in text and "XP and loses" in text: #tourney
                                         lifebuyc = True
                                 if lifebuyc is True:
                                         if(level3 >= 15 and buylife is True and life3 >= 0):
@@ -4906,19 +4749,19 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                         level4 = entry[2]
                                                         life4 = entry[3]
                                 lifebuyd = False
-                                if botname4 in chanmsgnick and "has challenged" in text and "is added to {0} clock".format(name4) in text: #rand challenge
+                                if botname in chanmsgnick and "has challenged" in text and "is added to {0} clock".format(name4) in text: #rand challenge
                                         lifebuyd = True
-                                if botname4 in chanmsgnick and "has attacked a" in text and "is added to {0} clock".format(name4) in text: #attack
+                                if botname in chanmsgnick and "has attacked a" in text and "is added to {0} clock".format(name4) in text: #attack
                                         lifebuyd = True
-                                if botname4 in chanmsgnick and "tried to slay a" in text and "is added to {0} clock".format(name4) in text: #slay
+                                if botname in chanmsgnick and "tried to slay a" in text and "is added to {0} clock".format(name4) in text: #slay
                                         lifebuyd = True
-                                if botname4 in chanmsgnick and "has been set upon by some" in text and "is added to {0}'s clock".format(name4) in text: #rand creep
+                                if botname in chanmsgnick and "has been set upon by some" in text and "is added to {0}'s clock".format(name4) in text: #rand creep
                                         lifebuyd = True
-                                if botname4 in chanmsgnick and "fights a random" in text and "is added to {0} clock".format(name4) in text: #rand god
+                                if botname in chanmsgnick and "fights a random" in text and "is added to {0} clock".format(name4) in text: #rand god
                                         lifebuyd = True
-                                if botname4 in chanmsgnick and "{0}".format(name4) in text and "have hunted down a bunch of" in text and "but they beat them badly!" in text: #team hunt
+                                if botname in chanmsgnick and "{0}".format(name4) in text and "have hunted down a bunch of" in text and "but they beat them badly!" in text: #team hunt
                                         lifebuyd = True
-                                if botname4 in chanmsgnick and "from {0}!".format(name4) in text and "XP and loses" in text: #tourney
+                                if botname in chanmsgnick and "from {0}!".format(name4) in text and "XP and loses" in text: #tourney
                                         lifebuyd = True
                                 if lifebuyd is True:
                                         if(level4 >= 15 and buylife is True and life4 >= 0):
@@ -4936,7 +4779,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                     return               
                 if char2 is True:
                         if(checknick == supynick2 and checknet == netname2):
-                                if(botname2 == chanmsgnick and "You are not logged in." in text):
+                                if(botname == chanmsgnick and "You are not logged in." in text):
                                     if pmtextmode is True:
                                             self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                                     self.usecommand(irc, "login {0} {1}".format(name2, pswd2), 2 )
@@ -4945,7 +4788,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                     return               
                 if char3 is True:
                         if(checknick == supynick3 and checknet == netname3):
-                                if(botname3 == chanmsgnick and "You are not logged in." in text):
+                                if(botname == chanmsgnick and "You are not logged in." in text):
                                     if pmtextmode is True:
                                             self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                                     self.usecommand(irc, "login {0} {1}".format(name3, pswd3), 3 )
@@ -4954,7 +4797,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                     return               
                 if char4 is True:
                         if(checknick == supynick4 and checknet == netname4):
-                                if(botname4 == chanmsgnick and "You are not logged in." in text):
+                                if(botname == chanmsgnick and "You are not logged in." in text):
                                     if pmtextmode is True:
                                             self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                                     self.usecommand(irc, "login {0} {1}".format(name4, pswd4), 4 )
@@ -4970,7 +4813,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                         return
                                 for entry in messagelist2:
                                     if(botname == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 1)
                                         return
                                 if(botname == chanmsgnick and "You are {0}".format(name) in text):
                                     if pmtextmode is True:
@@ -4979,45 +4821,42 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 if char2 is True:
                         if(checknick == supynick2 and checknet == netname2):
                                 for entry in messagelist:
-                                    if(botname2 == chanmsgnick and entry[0] in text):
+                                    if(botname == chanmsgnick and entry[0] in text):
                                         if pmtextmode is True:
                                                 self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                                         return
                                 for entry in messagelist2:
-                                    if(botname2 == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                    if(botname == chanmsgnick and entry[0] in text):
                                         return
-                                if(botname2 == chanmsgnick and "You are {0}".format(name2) in text):
+                                if(botname == chanmsgnick and "You are {0}".format(name2) in text):
                                     if pmtextmode is True:
                                             self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                                     return
                 if char3 is True:
                         if(checknick == supynick3 and checknet == netname3):
                                 for entry in messagelist:
-                                    if(botname3 == chanmsgnick and entry[0] in text):
+                                    if(botname == chanmsgnick and entry[0] in text):
                                         if pmtextmode is True:
                                                 self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                                         return
                                 for entry in messagelist2:
-                                    if(botname3 == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                    if(botname == chanmsgnick and entry[0] in text):
                                         return
-                                if(botname3 == chanmsgnick and "You are {0}".format(name3) in text):
+                                if(botname == chanmsgnick and "You are {0}".format(name3) in text):
                                     if pmtextmode is True:
                                             self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                                     return
                 if char4 is True:
                         if(checknick == supynick4 and checknet == netname4):
                                 for entry in messagelist:
-                                    if(botname4 == chanmsgnick and entry[0] in text):
+                                    if(botname == chanmsgnick and entry[0] in text):
                                         if pmtextmode is True:
                                                 self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                                         return
                                 for entry in messagelist2:
-                                    if(botname4 == chanmsgnick and entry[0] in text):
-#                                        self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                    if(botname == chanmsgnick and entry[0] in text):
                                         return
-                                if(botname4 == chanmsgnick and "You are {0}".format(name4) in text):
+                                if(botname == chanmsgnick and "You are {0}".format(name4) in text):
                                     if pmtextmode is True:
                                             self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                                     return
@@ -5077,12 +4916,6 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
     def main(self, irc):
         global channame
         global botname
-        global channame2
-        global botname2
-        global channame3
-        global botname3
-        global channame4
-        global botname4
         global netname
         global otherIrc
         global supynick
@@ -5209,18 +5042,18 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 chantest = otherIrc2.state.channels
                 for entry in chantest:
-                    if entry == channame2:
+                    if entry == channame:
                         chancheck2 = True
                 if chancheck2 is False:
-                    otherIrc2.queueMsg(ircmsgs.join(channame2))
+                    otherIrc2.queueMsg(ircmsgs.join(channame))
                     botcheck2 = False
                 if chancheck2 is True:
                     try:
                         supynick2 = otherIrc2.nick
-                        chanstate = otherIrc2.state.channels[channame2]
+                        chanstate = otherIrc2.state.channels[channame]
                         users = [user for user in chanstate.users]
                         for entry in users:
-                            if botname2 == entry:
+                            if botname == entry:
                                 botcheck2 = True
                         if botcheck2 is False:
                                 if errortextmode is True:
@@ -5242,18 +5075,18 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 chantest = otherIrc3.state.channels
                 for entry in chantest:
-                    if entry == channame3:
+                    if entry == channame:
                         chancheck3 = True
                 if chancheck3 is False:
-                    otherIrc3.queueMsg(ircmsgs.join(channame3))
+                    otherIrc3.queueMsg(ircmsgs.join(channame))
                     botcheck3 = False
                 if chancheck3 is True:
                     try:
                         supynick3 = otherIrc3.nick
-                        chanstate = otherIrc3.state.channels[channame3]
+                        chanstate = otherIrc3.state.channels[channame]
                         users = [user for user in chanstate.users]
                         for entry in users:
-                            if botname3 == entry:
+                            if botname == entry:
                                 botcheck3 = True
                         if botcheck3 is False:
                                 if errortextmode is True:
@@ -5275,18 +5108,18 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 chantest = otherIrc4.state.channels
                 for entry in chantest:
-                    if entry == channame4:
+                    if entry == channame:
                         chancheck4 = True
                 if chancheck4 is False:
-                    otherIrc4.queueMsg(ircmsgs.join(channame4))
+                    otherIrc4.queueMsg(ircmsgs.join(channame))
                     botcheck4 = False
                 if chancheck4 is True:
                     try:
                         supynick4 = otherIrc4.nick
-                        chanstate = otherIrc4.state.channels[channame4]
+                        chanstate = otherIrc4.state.channels[channame]
                         users = [user for user in chanstate.users]
                         for entry in users:
-                            if botname4 == entry:
+                            if botname == entry:
                                 botcheck4 = True
                         if botcheck4 is False:
                                 if errortextmode is True:
@@ -5609,7 +5442,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global intervaltext
         global playbottext
         
-        def loopmgm():
+        def loopam():
             self.main(irc)
         nextTime = time.time() + interval
         
@@ -5617,18 +5450,26 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 self.replymulti(irc, "{0} - Checking timers every {1} minutes".format(playbottext, interval // 60))
         if gameactive is True:
             try:
-                schedule.addEvent(loopmgm, nextTime, "loopmgm")
+                schedule.addEvent(loopam, nextTime, "loopam")
             except AssertionError:
-                schedule.removeEvent('loopmgm')
-                schedule.addEvent(loopmgm, nextTime, "loopmgm")        
+                schedule.removeEvent('loopam')
+                schedule.addEvent(loopam, nextTime, "loopam")        
+
+    def __init__(self, irc):
+        self.__parent = super(AbandonedPlayBotMulti, self)
+        self.__parent.__init__(irc)
+
+        if autostartmode is True:
+                self.autostart(irc)
 
     def die(self):
+        self.__parent.die()
         try:
-                schedule.removeEvent('loopmgm')
+                schedule.removeEvent('loopam')
         except:
                 return
 
-Class = MultiGamePlayBotMulti
+Class = AbandonedPlayBotMulti
 
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:

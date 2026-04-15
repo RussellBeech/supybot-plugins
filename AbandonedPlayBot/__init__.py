@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2025, Russell Beech
+# Copyright (c) 2021-2026, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,30 +28,46 @@
 
 ###
 
-import supybot.conf as conf
-import supybot.registry as registry
+"""
+AbandonedPlayBot: Abandoned-IRC IdleRPG PlayBot
+"""
+
+import supybot
+import supybot.world as world
+
+# Use this for the version of this plugin.  You may wish to put a CVS keyword
+# in here if you're keeping the plugin in CVS or some similar system.
+__version__ = ""
+
+# XXX Replace this with an appropriate author or supybot.Author instance.
+__author__ = supybot.Author('Russell Beech', 'RussellB',
+                             'leonbeech@yahoo.co.uk')
+
+# This is a dictionary mapping supybot.Author instances to lists of
+# contributions.
+__contributors__ = {}
+
+# This is a url where the most recent plugin package can be downloaded.
+__url__ = ''
+
+from . import config
+from . import plugin
 try:
-    from supybot.i18n import PluginInternationalization
-    _ = PluginInternationalization('MultiGamePlayBotMulti')
+    from imp import reload
+    # In case we're being reloaded.
+    reload(config)
+    reload(plugin)
+### Add more reloads here if you add third-party modules and want them to be
+### reloaded when this plugin is reloaded.  Don't forget to import them as well!
 except:
-    # Placeholder that allows to run the plugin on a bot
-    # without the i18n module
-    _ = lambda x: x
+    from importlib import reload
+    reload(plugin) # In case we're being reloaded.
 
+if world.testing:
+    from . import test
 
-def configure(advanced):
-    # This will be called by supybot to configure this module.  advanced is
-    # a bool that specifies whether the user identified themself as an advanced
-    # user or not.  You should effect your configuration by manipulating the
-    # registry as appropriate.
-    from supybot.questions import expect, anything, something, yn
-    conf.registerPlugin('MultiGamePlayBotMulti', True)
-
-
-MultiGamePlayBotMulti = conf.registerPlugin('MultiGamePlayBotMulti')
-# This is where your configuration variables (if any) should go.  For example:
-# conf.registerGlobalValue(MultiGamePlayBotMulti, 'someConfigVariableName',
-#     registry.Boolean(False, _("""Help for someConfigVariableName.""")))
+Class = plugin.Class
+configure = config.configure
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

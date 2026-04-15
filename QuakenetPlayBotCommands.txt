@@ -1,6 +1,8 @@
 PlayBot Commands List
 
 Area Switching Mode Off     	- setoption townwork off
+Autostart Mode Off              - setoption autostart false
+Autostart Mode On               - setoption autostart true
 BlackBuy Spend Mode Off		- setoption blackbuy false  
 BlackBuy Spend Mode On      	- setoption blackbuy true  
 BlackBuy 14 Spend Mode Off  	- setoption blackbuy14 false  
@@ -12,8 +14,8 @@ Buy Life Mode On            	- setoption buylife true
 CreepAttack Mode Off        	- setoption creepattack false  
 CreepAttack Mode On         	- setoption creepattack true  
 Erase Config File           	- eraseconfig  
-Erase PlayerList            	- qmultisingleerase  
-Erase PlayerList            	- qmultimultierase  
+Erase PlayerList            	- qsingleerase  
+Erase PlayerList            	- qmultierase  
 Error Text Mode Off             - setoption errortext false
 Error Text Mode On              - setoption errortext true
 Experince Buying Mode Off   	- setoption expbuy false  
