@@ -19,8 +19,8 @@ Multi - Up to 5 players.
 AbandonedPlayBot and AbandonedPlayBotMulti are PlayBots for IdleRPG game on Abandoned-Irc #zw-idlerpg.
  
 The different version are:  
-Single - Single player on a Single Game.  
-Multi - Up to 4 players on a Single Game.  
+Single - Single player.  
+Multi - Up to 4 players.  
 
 QuakenetPlayBot and QuakeNetPlayBotMulti are PlayBots for IdleRPG game on QuakeNet #idlerpg  
 The different version are:  
