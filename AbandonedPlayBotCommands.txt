@@ -3,7 +3,7 @@ PlayBot Commands List
 Area Switching Mode Off     	- setoption townwork off
 Autostart Mode Off              - setoption autostart false
 Autostart Mode On               - setoption autostart true
-BlackBuy Spend Mode Off		- setoption blackbuy false  
+BlackBuy Spend Mode Off	        - setoption blackbuy false  
 BlackBuy Spend Mode On      	- setoption blackbuy true  
 BlackBuy 14 Spend Mode Off  	- setoption blackbuy14 false  
 BlackBuy 14 Spend Mode On   	- setoption blackbuy14 true  
