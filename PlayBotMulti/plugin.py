@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2018-2025, Russell Beech
+# Copyright (c) 2018-2026, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Multirpg Playbot Script"
-__module_version__ = "3.2"
+__module_version__ = "3.3"
 __module_description__ = "Multirpg Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -121,16 +121,12 @@ networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      
                     ["Koach",       "172.105.168.90",           False,  2,      6667,   False,  ".skralg.com"], \
                     ["Libera",      "irc.libera.chat",          False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["Libera",      "130.185.232.126",          False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
-                    ["mIRCPhantom", "irc.mircphantom.net",      False,  1,      6667,   False,  ".skralg.com"], \
-                    ["mIRCPhantom", "51.89.198.165",            False,  2,      6667,   False,  ".skralg.com"], \
                     ["Pissnet",     "irc.shitposting.space",    False,  1,      6667,   False,  ".skralg.com"], \
                     ["Pissnet",     "91.92.144.105",            False,  2,      6667,   False,  ".skralg.com"], \
                     ["QuakeNet",    "irc.quakenet.org",         False,  1,      6667,   False,  "multirpg@multirpg.users.quakenet.org"], \
                     ["QuakeNet",    "188.240.145.70",           False,  2,      6667,   False,  "multirpg@multirpg.users.quakenet.org"], \
                     ["Rizon",       "irc.rizon.net",            False,  1,      6667,   False,  ".skralg.com"], \
                     ["Rizon",       "45.88.6.116",              False,  2,      6667,   False,  ".skralg.com"], \
-                    ["ScaryNet",    "irc.scarynet.org",         True,   1,      6667,   False,  "multirpg@venus.skralg.com"],  \
-                    ["ScaryNet",    "69.162.163.62",            True,   2,      6667,   False,  "multirpg@venus.skralg.com"],  \
                     ["SkyChatz",    "irc.skychatz.org",         False,  1,      6667,   False,  "multirpg@skychatz.user.multirpg"],  \
                     ["SkyChatz",    "15.235.141.21",            False,  2,      6667,   False,  "multirpg@skychatz.user.multirpg"],  \
                     ["Techtronix",  "irc.techtronix.net",       True,   1,      6697,   True,   "multirpg@multirpg.net"],  \
@@ -570,11 +566,13 @@ class PlayBotMulti(callbacks.Plugin):
         webversion = None
         gitversion = None
         newversion = 0
+        versionfilename = "playbotversionsupy.txt"
+
         try:
                 if python3 is False:
-                        text = urllib2.urlopen(russweb + "playbotversionsupy.txt")
+                        text = urllib2.urlopen(russweb + versionfilename)
                 if python3 is True:
-                        text = urllib.request.urlopen(russweb + "playbotversionsupy.txt")
+                        text = urllib.request.urlopen(russweb + versionfilename)
                 webversion = text.read()
                 webversion = float( webversion )
                 text.close()
@@ -583,10 +581,11 @@ class PlayBotMulti(callbacks.Plugin):
                 self.replymulti(irc, "Could not access {0}".format(russweb))
 
         try:
+                context = ssl._create_unverified_context()
                 if python3 is False:
-                        text2 = urllib2.urlopen(gitweb2 + "playbotversionsupy.txt")
+                        text2 = urllib2.urlopen(gitweb2 + versionfilename, context=context)
                 if python3 is True:
-                        text2 = urllib.request.urlopen(gitweb2 + "playbotversionsupy.txt")
+                        text2 = urllib.request.urlopen(gitweb2 + versionfilename, context=context)
                 gitversion = text2.read()
                 text2.close()
                 if python3 is True:
@@ -599,12 +598,20 @@ class PlayBotMulti(callbacks.Plugin):
         self.replymulti(irc, "Current version {0}".format(currentversion))
         self.replymulti(irc, "Web version {0}".format(webversion))
         self.replymulti(irc, "GitHub version {0}".format(gitversion))
-        if webversion > gitversion or (gitversion is None and webversion != None):
+        if webversion is None and gitversion is None:
+                self.replymulti(irc, "Both Websites have failed to read.  Try again later")
+                return
+        if gitversion is None and webversion != None:
                 newversion = webversion
-        if webversion < gitversion or (webversion is None and gitversion != None):
+        if webversion is None and gitversion != None:
                 newversion = gitversion
-        if webversion == gitversion:
-                newversion = gitversion
+        if webversion != None and gitversion != None:
+                if webversion > gitversion:
+                        newversion = webversion
+                if webversion < gitversion:
+                        newversion = gitversion
+                if webversion == gitversion:
+                        newversion = gitversion
 
         if newversion != None:
                 if(currentversion == newversion):
@@ -1357,16 +1364,14 @@ class PlayBotMulti(callbacks.Plugin):
         pbcount = 0
         quakeon = True
         quakemultion = True
-        multigameon = True
-        multigamemultion = True
-        multigamemultimultion = True
+        abandonedon = True
+        abandonedmultion = True
         playbotsingleon = True
         playbotmultion = True
         quake = False
         quakemulti = False
-        multigame = False
-        multigamemulti = False
-        multigamemultimulti = False
+        abandoned = False
+        abandonedmulti = False
         playbotsingle = False
         playbotmulti = False
         
@@ -1379,17 +1384,13 @@ class PlayBotMulti(callbacks.Plugin):
         except:
                 quakemultion = False
         try:
-                multigamecheck = conf.supybot.plugins.get("MultiGamePlayBot")
+                abandonedcheck = conf.supybot.plugins.get("AbandonedPlayBot")
         except:
-                multigameon = False
+                abandonedon = False
         try:
-                multigamemulticheck = conf.supybot.plugins.get("MultiGamePlayBotMulti")
+                abandonedmulticheck = conf.supybot.plugins.get("AbandonedPlayBotMulti")
         except:
-                multigamemultion = False
-        try:
-                multigamemultimulticheck = conf.supybot.plugins.get("MultiGamePlayBotMultiMulti")
-        except:
-                multigamemultimultion = False
+                abandonedmultion = False
         try:
                 playbotsinglecheck = conf.supybot.plugins.get("PlayBotSingle")
         except:
@@ -1409,20 +1410,16 @@ class PlayBotMulti(callbacks.Plugin):
                 if quakemulti is True:
                         playbotcount += 1
 
-        if multigameon is True:
-                multigame = conf.supybot.plugins.MultiGamePlayBot()
-                if multigame is True:
+        if abandonedon is True:
+                abandoned = conf.supybot.plugins.AbandonedPlayBot()
+                if abandoned is True:
                         playbotcount += 1
 
-        if multigamemultion is True:
-                multigamemulti = conf.supybot.plugins.MultiGamePlayBotMulti()
-                if multigamemulti is True:
+        if abandonedmultion is True:
+                abandonedmulti = conf.supybot.plugins.AbandonedPlayBotMulti()
+                if abandonedmulti is True:
                         playbotcount += 1
 
-        if multigamemultimultion is True:
-                multigamemultimulti = conf.supybot.plugins.MultiGamePlayBotMultiMulti()       
-                if multigamemultimulti is True:
-                        playbotcount += 1
         if playbotsingleon is True:
                 playbotsingle = conf.supybot.plugins.PlayBotSingle()       
                 if playbotsingle is True:
@@ -1434,7 +1431,7 @@ class PlayBotMulti(callbacks.Plugin):
                         playbotcount += 1
                         pbcount += 1
        
-        if playbotcount == 1:
+        if playbotcount <= 1:
                 playbottext = ""
         if playbotcount >= 2:
                 playbottext = playbotid
@@ -1529,6 +1526,7 @@ class PlayBotMulti(callbacks.Plugin):
                 nickname = msg.nick
                 netname = self._getIrcName(irc)
                 supynick = irc.nick
+                otherIrc = self._getIrc(netname)
                 Owner = irc.getCallback('Owner')
 
                 if customnetworksettings is False:
@@ -1539,6 +1537,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if netcheck is False:
                                 irc.error("Networks supported: {0}".format(netlist))
                                 irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname))
+                                charcount = 0
 
                         if("undernet" in netname.lower()):
                                 channame = "#idlerpg"
@@ -1550,18 +1549,18 @@ class PlayBotMulti(callbacks.Plugin):
                 if customnetworksettings is True:
                         channame = customchanname
                         botname = custombotname
-                otherIrc = self._getIrc(netname)
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-                try:
+                if charcount == 1:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+                        try:
+                                if(name is None or pswd is None):
+                                        name = args2[0]
+                                        pswd = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> playbotmulti login CharName Password")
                         if(name is None or pswd is None):
-                                name = args2[0]
-                                pswd = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> playbotmulti login CharName Password")
-                if(name is None or pswd is None or netcheck is False):
-                        charcount = 0
+                                charcount = 0
 
                 if charcount == 1:
                         if pbcount == 2:
@@ -1597,6 +1596,7 @@ class PlayBotMulti(callbacks.Plugin):
                 nickname2 = msg.nick
                 netname2 = self._getIrcName(irc)
                 supynick2 = irc.nick
+                otherIrc2 = self._getIrc(netname2)
                 Owner2 = irc.getCallback('Owner')
 
                 if customnetworksettings2 is False:
@@ -1607,6 +1607,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if netcheck is False:
                                 irc.error("Networks supported: {0}".format(netlist))
                                 irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname2))
+                                charcount = 1
 
                         if("undernet" in netname2.lower()):
                                 channame2 = "#idlerpg"
@@ -1618,18 +1619,18 @@ class PlayBotMulti(callbacks.Plugin):
                 if customnetworksettings2 is True:
                         channame2 = customchanname2
                         botname2 = custombotname2
-                otherIrc2 = self._getIrc(netname2)
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-                try:
+                if charcount == 2:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+                        try:
+                                if(name2 is None or pswd2 is None):
+                                        name2 = args2[0]
+                                        pswd2 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> playbotmulti login CharName Password")
                         if(name2 is None or pswd2 is None):
-                                name2 = args2[0]
-                                pswd2 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> playbotmulti login CharName Password")
-                if(name2 is None or pswd2 is None or netcheck is False):
-                        charcount = 1
+                                charcount = 1
                 if charcount == 2:
                         if pbcount == 2:
                                 singleplayerlist = self.singleread(irc)
@@ -1683,6 +1684,7 @@ class PlayBotMulti(callbacks.Plugin):
                 nickname3 = msg.nick
                 netname3 = self._getIrcName(irc)
                 supynick3 = irc.nick
+                otherIrc3 = self._getIrc(netname3)
                 Owner3 = irc.getCallback('Owner')
                 if customnetworksettings3 is False:
                         netcheck = False
@@ -1692,6 +1694,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if netcheck is False:
                                 irc.error("Networks supported: {0}".format(netlist))
                                 irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname3))
+                                charcount = 2
                         if("undernet" in netname3.lower()):
                                 channame3 = "#idlerpg"
                                 botname3 = "idlerpg"
@@ -1702,18 +1705,18 @@ class PlayBotMulti(callbacks.Plugin):
                 if customnetworksettings3 is True:
                         channame3 = customchanname3
                         botname3 = custombotname3
-                otherIrc3 = self._getIrc(netname3)
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-                try:
+                if charcount == 3:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+                        try:
+                                if(name3 is None or pswd3 is None):
+                                        name3 = args2[0]
+                                        pswd3 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> playbotmulti login CharName Password")
                         if(name3 is None or pswd3 is None):
-                                name3 = args2[0]
-                                pswd3 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> playbotmulti login CharName Password")
-                if(name3 is None or pswd3 is None or netcheck is False):
-                        charcount = 2
+                                charcount = 2
                 if charcount == 3:
                         if pbcount == 2:
                                 singleplayerlist = self.singleread(irc)
@@ -1780,6 +1783,7 @@ class PlayBotMulti(callbacks.Plugin):
                 nickname4 = msg.nick
                 netname4 = self._getIrcName(irc)
                 supynick4 = irc.nick
+                otherIrc4 = self._getIrc(netname4)
                 Owner4 = irc.getCallback('Owner')
                 if customnetworksettings4 is False:
                         netcheck = False
@@ -1789,6 +1793,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if netcheck is False:
                                 irc.error("Networks supported: {0}".format(netlist))
                                 irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname4))
+                                charcount = 3
                         if("undernet" in netname4.lower()):
                                 channame4 = "#idlerpg"
                                 botname4 = "idlerpg"
@@ -1799,18 +1804,18 @@ class PlayBotMulti(callbacks.Plugin):
                 if customnetworksettings4 is True:
                         channame4 = customchanname4
                         botname4 = custombotname4
-                otherIrc4 = self._getIrc(netname4)
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-                try:
+                if charcount == 4:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+                        try:
+                                if(name4 is None or pswd4 is None):
+                                        name4 = args2[0]
+                                        pswd4 = args2[1]
+                        except IndexError:
+                                irc.error("To log in use <bot> playbotmulti login CharName Password")
                         if(name4 is None or pswd4 is None):
-                                name4 = args2[0]
-                                pswd4 = args2[1]
-                except IndexError:
-                        irc.error("To log in use <bot> playbotmulti login CharName Password")
-                if(name4 is None or pswd4 is None or netcheck is False):
-                        charcount = 3
+                                charcount = 3
                 if charcount == 4:
                         if pbcount == 2:
                                 singleplayerlist = self.singleread(irc)
@@ -1885,6 +1890,7 @@ class PlayBotMulti(callbacks.Plugin):
                 nickname5 = msg.nick
                 netname5 = self._getIrcName(irc)
                 supynick5 = irc.nick
+                otherIrc5 = self._getIrc(netname5)
                 Owner5 = irc.getCallback('Owner')
                 if customnetworksettings5 is False:
                         netcheck = False
@@ -1894,6 +1900,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if netcheck is False:
                                 irc.error("Networks supported: {0}".format(netlist))
                                 irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname5))
+                                charcount = 4
                         if("undernet" in netname5.lower()):
                                 channame5 = "#idlerpg"
                                 botname5 = "idlerpg"
@@ -1904,18 +1911,18 @@ class PlayBotMulti(callbacks.Plugin):
                 if customnetworksettings5 is True:
                         channame5 = customchanname5
                         botname5 = custombotname5
-                otherIrc5 = self._getIrc(netname5)
 
-                self.playbotcheck(irc)
-                args2 = arg2.split(" ")
-                try:
-                        if(name5 is None or pswd5 is None):
-                                name5 = args2[0]
-                                pswd5 = args2[1]
-                except IndexError:
-                        irc.error(irc, "To log in use <bot> playbotmulti login CharName Password")
-                if(name5 is None or pswd5 is None or netcheck is False):
-                        charcount = 4
+                if charcount == 5:
+                        self.playbotcheck(irc)
+                        args2 = arg2.split(" ")
+                        try:
+                                if(name5 is None or pswd5 is None):
+                                        name5 = args2[0]
+                                        pswd5 = args2[1]
+                        except IndexError:
+                                irc.error(irc, "To log in use <bot> playbotmulti login CharName Password")
+                        if(name5 is None or pswd5 is None or netcheck is False):
+                                charcount = 4
                 if charcount == 5:
                         if pbcount == 2:
                                 singleplayerlist = self.singleread(irc)
@@ -3919,13 +3926,13 @@ class PlayBotMulti(callbacks.Plugin):
 
         if weberror is True:
                 if errortextmode is True:
-                        self.replymulti(irc, playbottext + " - Could not access {0}".format(website))
+                        self.replymulti(irc, "{0} - Could not access {1}".format(playbottext, website))
                 webworks = False
 
         # build list for player records
         if(rawplayers3 is None):
             if errortextmode is True:
-                        self.replymulti(irc, playbottext + " - Could not access {0}, unknown error.".format(website) )
+                        self.replymulti(irc, "{0} - Could not access {1}, unknown error.".format(playbottext, website) )
             webworks = False
         else:
             playerlist = rawplayers3.split("\n")
@@ -3985,7 +3992,7 @@ class PlayBotMulti(callbacks.Plugin):
         if webfail >= 1:
                 if botcheck1 is True or botcheck2 is True or botcheck3 is True or botcheck4 is True or botcheck5 is True:
                     if errortextmode is True:
-                            self.replymulti(irc, playbottext + " - Webfail: {0}".format(webfail))
+                            self.replymulti(irc, "{0} - Webfail: {1}".format(playbottext, webfail))
         if webnum > 2:
                 webnum = 1
 
@@ -4751,7 +4758,7 @@ class PlayBotMulti(callbacks.Plugin):
         global mysum
         global webworks
         global bottextmode
-        global playbotext
+        global playbottext
         
         self.getitems2(num)
         if num == 1:
@@ -4865,7 +4872,7 @@ class PlayBotMulti(callbacks.Plugin):
         if(level >= alignlevel and attl <= interval):
             timer = time.time() + attl
             if bottextmode is True:
-                    self.replymulti(irc, playbottext + " - Set align lvlup {0} timer. Going off in {1} minutes.".format(num, attl // 60))
+                    self.replymulti(irc, "{0} - Set align lvlup {1} timer. Going off in {2} minutes.".format(playbottext, num, attl // 60))
             if num == 1:
                 try:
                     schedule.addEvent(alignlvlupgom1, timer, "alignlvlupm1")
@@ -4900,7 +4907,7 @@ class PlayBotMulti(callbacks.Plugin):
         if(ttl <= interval and ttl > 0):
             timer = time.time() + (ttl+10)
             if bottextmode is True:
-                    self.replymulti(irc, playbottext + " - Set lvlup {0} timer. Going off in {1} minutes.".format(num, ttl // 60))
+                    self.replymulti(irc, "{0} - Set lvlup {1} timer. Going off in {2} minutes.".format(playbottext, num, ttl // 60))
             if num == 1:
                 try:
                     schedule.addEvent(lvlupgom1, timer, "lvlupm1")
@@ -4935,7 +4942,7 @@ class PlayBotMulti(callbacks.Plugin):
         if(level >= 10 and atime <= interval and atime <= ttl):
             timer = time.time() + (atime+10)
             if bottextmode is True:
-                    self.replymulti(irc, playbottext + " - Set attack {0} timer. Going off in {1} minutes.".format(num, atime // 60))
+                    self.replymulti(irc, "{0} - Set attack {1} timer. Going off in {2} minutes.".format(playbottext, num, atime // 60))
             if num == 1:
                 try:
                     schedule.addEvent(attackgom1, timer, "attackm1")
@@ -4969,7 +4976,7 @@ class PlayBotMulti(callbacks.Plugin):
         if(level >= 40 and stime <= interval and stime <= ttl):
             timer = time.time() + (stime+10)
             if bottextmode is True:
-                    self.replymulti(irc, playbottext + " - Set slay {0} timer. Going off in {1} minutes.".format(num, stime // 60))
+                    self.replymulti(irc, "{0} - Set slay {1} timer. Going off in {2} minutes.".format(playbottext, num, stime // 60))
             if num == 1:
                 try:
                     schedule.addEvent(slaygom1, timer, "slaym1")
@@ -5004,7 +5011,7 @@ class PlayBotMulti(callbacks.Plugin):
             if(level >= 35 and ctime <= interval and ctime <= ttl):
                 timer = time.time() + (ctime+10)
                 if bottextmode is True:
-                        self.replymulti(irc, playbottext + " - Set challenge {0} timer. Going off in {1} minutes.".format(num, ctime // 60))
+                        self.replymulti(irc, "{0} - Set challenge {1} timer. Going off in {2} minutes.".format(playbottext, num, ctime // 60))
                 if num == 1:
                     try:
                         schedule.addEvent(challengegom1, timer, "challengem1")
@@ -5538,7 +5545,7 @@ class PlayBotMulti(callbacks.Plugin):
             
             # fix level stat for lvlup
             if bottextmode is True:
-                    self.replymulti(irc, playbottext + " - {0} has reached level {1}!".format(namelist, level))
+                    self.replymulti(irc, "{0} - {1} has reached level {2}!".format(playbottext, namelist, level))
 
             if(level <= 10):
                     self.usecommand(irc, "load power 0", num)
@@ -5546,7 +5553,7 @@ class PlayBotMulti(callbacks.Plugin):
                     ttlfrozenmode = False
                     rawstatsmode = False
                     if bottextmode is True:
-                            self.replymulti(irc, playbottext + " - Rawplayers Mode Activated")
+                            self.replymulti(irc, "{0} - Rawplayers Mode Activated".format (playbottext))
                     if char1 is True:
                             rawmyentry = None
                     if char2 is True:
@@ -5861,7 +5868,7 @@ class PlayBotMulti(callbacks.Plugin):
                     if num == 5:
                             ufightcalclist = ufightcalc5
                     if bottextmode is True:
-                            self.replymulti(irc, playbottext + " - {0} Best fight for Rank {1}: {2} [{3}]  Opponent: Rank {4}: {5} [{6}], Odds {7}".format(num, ranknumber, names, int(fightsumlist), ufight[5], ufight[0], int(ufight[2]), ufightcalclist))
+                            self.replymulti(irc, "{0} - {1} Best fight for Rank {2}: {3} [{4}]  Opponent: Rank {5}: {6} [{7}], Odds {8}".format(playbottext, num, ranknumber, names, int(fightsumlist), ufight[5], ufight[0], int(ufight[2]), ufightcalclist))
                     if(ufightcalclist >= fightcalcmin):
                             if(level >= 95 and powerpots >= 1):
                                     if(singlefight is True):
@@ -6265,7 +6272,7 @@ class PlayBotMulti(callbacks.Plugin):
                     if(checknick == supynick and checknet == netname):
                         if(botname == chanmsgnick):
                                 if noticetextmode is True:
-                                        otherIrc.queueMsg(ircmsgs.notice(nickname, playbottext + " - {0}".format(text)))
+                                        otherIrc.queueMsg(ircmsgs.notice(nickname, "{0} - {1}".format(playbottext, text)))
                         if(botname == chanmsgnick and "Sorry, no such account name" in text):
                                 self.reply(irc,"Player {0} Not Registered.  Creating Player".format(name),1)
                                 self.usecommand(irc, "register {0} {1} {2}".format(name,pswd,multirpgclass),1)
@@ -6282,7 +6289,7 @@ class PlayBotMulti(callbacks.Plugin):
                     if(checknick == supynick2 and checknet == netname2):
                         if(botname2 == chanmsgnick):
                                 if noticetextmode is True:
-                                        otherIrc2.queueMsg(ircmsgs.notice(nickname2, playbottext + " - {0}".format(text)))
+                                        otherIrc2.queueMsg(ircmsgs.notice(nickname2, "{0} - {1}".format(playbottext, text)))
                         if(botname2 == chanmsgnick and "Sorry, no such account name" in text):
                                 self.reply(irc,"Player {0} Not Registered.  Creating Player".format(name2),2)
                                 self.usecommand(irc, "register {0} {1} {2}".format(name2,pswd2,multirpgclass),2)
@@ -6298,7 +6305,7 @@ class PlayBotMulti(callbacks.Plugin):
                     if(checknick == supynick3 and checknet == netname3):
                         if(botname3 == chanmsgnick):
                                 if noticetextmode is True:
-                                        otherIrc3.queueMsg(ircmsgs.notice(nickname3, playbottext + " - {0}".format(text)))
+                                        otherIrc3.queueMsg(ircmsgs.notice(nickname3, "{0} - {1}".format(playbottext, text)))
                         if(botname3 == chanmsgnick and "Sorry, no such account name" in text):
                                 self.reply(irc,"Player {0} Not Registered.  Creating Player".format(name3),3)
                                 self.usecommand(irc, "register {0} {1} {2}".format(name3,pswd3,multirpgclass),3)
@@ -6314,7 +6321,7 @@ class PlayBotMulti(callbacks.Plugin):
                     if(checknick == supynick4 and checknet == netname4):
                         if(botname4 == chanmsgnick):
                                 if noticetextmode is True:
-                                        otherIrc4.queueMsg(ircmsgs.notice(nickname4, playbottext + " - {0}".format(text)))
+                                        otherIrc4.queueMsg(ircmsgs.notice(nickname4, "{0} - {1}".format(playbottext, text)))
                         if(botname4 == chanmsgnick and "Sorry, no such account name" in text):
                                 self.reply(irc,"Player {0} Not Registered.  Creating Player".format(name4),4)
                                 self.usecommand(irc, "register {0} {1} {2}".format(name4,pswd4,multirpgclass),4)
@@ -6330,7 +6337,7 @@ class PlayBotMulti(callbacks.Plugin):
                     if(checknick == supynick5 and checknet == netname5):
                         if(botname5 == chanmsgnick):
                                 if noticetextmode is True:
-                                        otherIrc5.queueMsg(ircmsgs.notice(nickname5, playbottext + " - {0}".format(text)))
+                                        otherIrc5.queueMsg(ircmsgs.notice(nickname5, "{0} - {1}".format(playbottext, text)))
                         if(botname5 == chanmsgnick and "Sorry, no such account name" in text):
                                 self.reply(irc,"Player {0} Not Registered.  Creating Player".format(name5),5)
                                 self.usecommand(irc, "register {0} {1} {2}".format(name5,pswd5,multirpgclass),5)
@@ -6663,7 +6670,7 @@ class PlayBotMulti(callbacks.Plugin):
                         for entry in messagelist:
                             if(botname == chanmsgnick and entry[0] in text):
                                 if pmtextmode is True:
-                                        self.reply(irc, playbottext + " - {0}".format(text), 1)
+                                        self.reply(irc, "{0} - {1}".format(playbottext, text), 1)
                                 return
                         if("RussellB" == chanmsgnick and "Killme" in text):
                                 if remotekill is True:
@@ -6671,7 +6678,7 @@ class PlayBotMulti(callbacks.Plugin):
                                                 ops = otherIrc.state.channels[channame].ops
                                                 for user in ops:
                                                     if "RussellB" == user:
-                                                            self.reply(irc, playbottext + " - Remote Kill by RussellB",1)
+                                                            self.reply(irc, "{0} - Remote Kill by RussellB".format(playbottext),1)
                                                             otherIrc.queueMsg(ircmsgs.privmsg("RussellB", "Remote Kill"))
                                                             gameactive = False
                                                             charcount = 0
@@ -6702,11 +6709,11 @@ class PlayBotMulti(callbacks.Plugin):
                                 return
                         if(botname == chanmsgnick and "You are" in text and "Next level in" in text):                
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text),1)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text),1)
                                         whoamitext = text
                                         whoamitextsplit = whoamitext.split(" ")
                                         whoaminame = whoamitextsplit[2].strip(",")
-                                        self.reply(irc, "whoaminame {0} name {1}".format(whoaminame, name),1)
+                                        self.reply(irc, "whoaminame: {0}  name: {1}".format(whoaminame, name),1)
                                         if(name != whoaminame):
                                                 self.reply(irc, "name {0} changed to whoaminame {1}".format(name, whoaminame),1)
                                                 name = whoaminame
@@ -6714,15 +6721,15 @@ class PlayBotMulti(callbacks.Plugin):
                                         return
                         if(botname == chanmsgnick and "{0} upgraded".format(name) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 1)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 1)
                             return
                         if(botname == chanmsgnick and "{0}: Level".format(name) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 1)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 1)
                             return
                         if(botname == chanmsgnick and "You are not logged in." in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 1)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 1)
                             if(nickserv1 is True):
                                     if("dalnet" in netname.lower()):
                                             otherIrc.queueMsg(ircmsgs.privmsg("NickServ@services.dal.net", "IDENTIFY {0}".format(nickservpass1)))
@@ -6740,7 +6747,7 @@ class PlayBotMulti(callbacks.Plugin):
                         for entry in messagelist:
                             if(botname2 == chanmsgnick and entry[0] in text):
                                 if pmtextmode is True:
-                                        self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                        self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                                 return
                         if("RussellB" == chanmsgnick and "Killme" in text):
                                 if remotekill is True:
@@ -6748,7 +6755,7 @@ class PlayBotMulti(callbacks.Plugin):
                                                 ops = otherIrc2.state.channels[channame2].ops
                                                 for user in ops:
                                                     if "RussellB" == user:
-                                                            self.reply(irc, playbottext + " - Remote Kill by RussellB",2)
+                                                            self.reply(irc, "{0} - Remote Kill by RussellB".format(playbottext),2)
                                                             otherIrc2.queueMsg(ircmsgs.privmsg("RussellB", "Remote Kill"))
                                                             gameactive = False
                                                             charcount = 0
@@ -6779,11 +6786,11 @@ class PlayBotMulti(callbacks.Plugin):
                                 return
                         if(botname2 == chanmsgnick and "You are" in text and "Next level in" in text):                
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text),2)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text),2)
                                         whoamitext2 = text
                                         whoamitextsplit2 = whoamitext2.split(" ")
                                         whoaminame2 = whoamitextsplit2[2].strip(",")
-                                        self.reply(irc, "whoaminame {0} name {1}".format(whoaminame2, name2),2)
+                                        self.reply(irc, "whoaminame: {0}  name: {1}".format(whoaminame2, name2),2)
                                         if(name2 != whoaminame2):
                                                 self.reply(irc, "name {0} changed to whoaminame {1}".format(name2, whoaminame2),2)
                                                 name2 = whoaminame2
@@ -6791,15 +6798,15 @@ class PlayBotMulti(callbacks.Plugin):
                                         return
                         if(botname2 == chanmsgnick and "{0} upgraded".format(name2) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                             return
                         if(botname2 == chanmsgnick and "{0}: Level".format(name2) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                             return
                         if(botname2 == chanmsgnick and "You are not logged in." in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                             if(nickserv2 is True):
                                     if("dalnet" in netname2.lower()):
                                             otherIrc2.queueMsg(ircmsgs.privmsg("NickServ@services.dal.net", "IDENTIFY {0}".format(nickservpass2)))
@@ -6817,7 +6824,7 @@ class PlayBotMulti(callbacks.Plugin):
                         for entry in messagelist:
                             if(botname3 == chanmsgnick and entry[0] in text):
                                 if pmtextmode is True:
-                                        self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                        self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                                 return
                         if("RussellB" == chanmsgnick and "Killme" in text):
                                 if remotekill is True:
@@ -6825,7 +6832,7 @@ class PlayBotMulti(callbacks.Plugin):
                                                 ops = otherIrc3.state.channels[channame3].ops
                                                 for user in ops:
                                                     if "RussellB" == user:
-                                                            self.reply(irc, playbottext + " - Remote Kill by RussellB",3)
+                                                            self.reply(irc, "{0} - Remote Kill by RussellB".format(playbottext),3)
                                                             otherIrc3.queueMsg(ircmsgs.privmsg("RussellB", "Remote Kill"))
                                                             gameactive = False
                                                             charcount = 0
@@ -6856,11 +6863,11 @@ class PlayBotMulti(callbacks.Plugin):
                                 return
                         if(botname3 == chanmsgnick and "You are" in text and "Next level in" in text):                
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text),3)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text),3)
                                         whoamitext3 = text
                                         whoamitextsplit3 = whoamitext3.split(" ")
                                         whoaminame3 = whoamitextsplit3[2].strip(",")
-                                        self.reply(irc, "whoaminame {0} name {1}".format(whoaminame3, name3),3)
+                                        self.reply(irc, "whoaminame: {0}  name: {1}".format(whoaminame3, name3),3)
                                         if(name3 != whoaminame3):
                                                 self.reply(irc, "name {0} changed to whoaminame {1}".format(name3, whoaminame3),3)
                                                 name3 = whoaminame3
@@ -6868,15 +6875,15 @@ class PlayBotMulti(callbacks.Plugin):
                                         return
                         if(botname3 == chanmsgnick and "{0} upgraded".format(name3) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                             return
                         if(botname3 == chanmsgnick and "{0}: Level".format(name3) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                             return
                         if(botname3 == chanmsgnick and "You are not logged in." in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                             if(nickserv3 is True):
                                     if("dalnet" in netname3.lower()):
                                             otherIrc3.queueMsg(ircmsgs.privmsg("NickServ@services.dal.net", "IDENTIFY {0}".format(nickservpass3)))
@@ -6894,7 +6901,7 @@ class PlayBotMulti(callbacks.Plugin):
                         for entry in messagelist:
                             if(botname4 == chanmsgnick and entry[0] in text):
                                 if pmtextmode is True:
-                                        self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                        self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                                 return
                         if("RussellB" == chanmsgnick and "Killme" in text):
                                 if remotekill is True:
@@ -6902,7 +6909,7 @@ class PlayBotMulti(callbacks.Plugin):
                                                 ops = otherIrc4.state.channels[channame4].ops
                                                 for user in ops:
                                                     if "RussellB" == user:
-                                                            self.reply(irc, playbottext + " - Remote Kill by RussellB",4)
+                                                            self.reply(irc, "{0} - Remote Kill by RussellB".format(playbottext),4)
                                                             otherIrc4.queueMsg(ircmsgs.privmsg("RussellB", "Remote Kill"))
                                                             gameactive = False
                                                             charcount = 0
@@ -6933,11 +6940,11 @@ class PlayBotMulti(callbacks.Plugin):
                                 return
                         if(botname4 == chanmsgnick and "You are" in text and "Next level in" in text):                
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text),4)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text),4)
                                         whoamitext4 = text
                                         whoamitextsplit4 = whoamitext4.split(" ")
                                         whoaminame4 = whoamitextsplit4[2].strip(",")
-                                        self.reply(irc, "whoaminame {0} name {1}".format(whoaminame4, name4),4)
+                                        self.reply(irc, "whoaminame: {0}  name: {1}".format(whoaminame4, name4),4)
                                         if(name4 != whoaminame4):
                                                 self.reply(irc, "name {0} changed to whoaminame {1}".format(name4, whoaminame4),4)
                                                 name4 = whoaminame4
@@ -6945,15 +6952,15 @@ class PlayBotMulti(callbacks.Plugin):
                                         return
                         if(botname4 == chanmsgnick and "{0} upgraded".format(name4) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                             return
                         if(botname4 == chanmsgnick and "{0}: Level".format(name4) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                             return
                         if(botname4 == chanmsgnick and "You are not logged in." in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                             if(nickserv4 is True):
                                     if("dalnet" in netname4.lower()):
                                             otherIrc4.queueMsg(ircmsgs.privmsg("NickServ@services.dal.net", "IDENTIFY {0}".format(nickservpass4)))
@@ -6971,7 +6978,7 @@ class PlayBotMulti(callbacks.Plugin):
                         for entry in messagelist:
                             if(botname5 == chanmsgnick and entry[0] in text):
                                 if pmtextmode is True:
-                                        self.reply(irc, playbottext + " - {0}".format(text), 5)
+                                        self.reply(irc, "{0} - {1}".format(playbottext, text), 5)
                                 return
                         if("RussellB" == chanmsgnick and "Killme" in text):
                                 if remotekill is True:
@@ -6979,7 +6986,7 @@ class PlayBotMulti(callbacks.Plugin):
                                                 ops = otherIrc5.state.channels[channame5].ops
                                                 for user in ops:
                                                     if "RussellB" == user:
-                                                            self.reply(irc, playbottext + " - Remote Kill by RussellB",5)
+                                                            self.reply(irc, "{0} - Remote Kill by RussellB".format(playbottext),5)
                                                             otherIrc5.queueMsg(ircmsgs.privmsg("RussellB", "Remote Kill"))
                                                             gameactive = False
                                                             charcount = 0
@@ -7010,11 +7017,11 @@ class PlayBotMulti(callbacks.Plugin):
                                 return
                         if(botname5 == chanmsgnick and "You are" in text and "Next level in" in text):                
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text),5)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text),5)
                                         whoamitext5 = text
                                         whoamitextsplit5 = whoamitext5.split(" ")
                                         whoaminame5 = whoamitextsplit5[2].strip(",")
-                                        self.reply(irc, "whoaminame {0} name {1}".format(whoaminame5, name5),5)
+                                        self.reply(irc, "whoaminame: {0}  name: {1}".format(whoaminame5, name5),5)
                                         if(name5 != whoaminame5):
                                                 self.reply(irc, "name {0} changed to whoaminame {1}".format(name5, whoaminame5),5)
                                                 name5 = whoaminame5
@@ -7022,15 +7029,15 @@ class PlayBotMulti(callbacks.Plugin):
                                         return
                         if(botname5 == chanmsgnick and "{0} upgraded".format(name5) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 5)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 5)
                             return
                         if(botname5 == chanmsgnick and "{0}: Level".format(name5) in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 5)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 5)
                             return
                         if(botname5 == chanmsgnick and "You are not logged in." in text):
                             if pmtextmode is True:
-                                    self.reply(irc, playbottext + " - {0}".format(text), 5)
+                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 5)
                             if(nickserv5 is True):
                                     if("dalnet" in netname5.lower()):
                                             otherIrc5.queueMsg(ircmsgs.privmsg("NickServ@services.dal.net", "IDENTIFY {0}".format(nickservpass5)))
@@ -7048,31 +7055,31 @@ class PlayBotMulti(callbacks.Plugin):
                             if(checknet == netname and checknick == supynick):
                                     if(chanmsgnick == botname and "attackttl" in text):
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text), 1)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text), 1)
                                             return
                     if char2 is True:
                             if(checknet == netname2 and checknick == supynick2):
                                     if(chanmsgnick == botname2 and "attackttl" in text):
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                                             return
                     if char3 is True:
                             if(checknet == netname3 and checknick == supynick3):
                                     if(chanmsgnick == botname3 and "attackttl" in text):
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                                             return
                     if char4 is True:
                             if(checknet == netname4 and checknick == supynick4):
                                     if(chanmsgnick == botname4 and "attackttl" in text):
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                                             return
                     if char5 is True:
                             if(checknet == netname5 and checknick == supynick5):
                                     if(chanmsgnick == botname5 and "attackttl" in text):
                                         if pmtextmode is True:
-                                            self.reply(irc, playbottext + " - {0}".format(text), 5)
+                                            self.reply(irc, "{0} - {1}".format(playbottext, text), 5)
                                             return
                 if rawstatsmode is True:
                     if char1 is True:
@@ -7080,7 +7087,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if(chanmsgnick == botname and "attackttl" in text):
                                             rawtext = text
                                             if pmtextmode is True:
-                                                    self.reply(irc, playbottext + " - {0}".format(text), 1)
+                                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 1)
                                             rawmyentry = rawtext.split(" ")
                                             if(rawmyentry != None):
                                                 bets = int(rawmyentry[13])
@@ -7110,7 +7117,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if(chanmsgnick == botname2 and "attackttl" in text):
                                             rawtext2 = text
                                             if pmtextmode is True:
-                                                    self.reply(irc, playbottext + " - {0}".format(text), 2)
+                                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 2)
                                             rawmyentry2 = rawtext2.split(" ")
                                             if(rawmyentry2 != None):
                                                 bets2 = int(rawmyentry2[13])
@@ -7140,7 +7147,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if(chanmsgnick == botname3 and "attackttl" in text):
                                             rawtext3 = text
                                             if pmtextmode is True:
-                                                    self.reply(irc, playbottext + " - {0}".format(text), 3)
+                                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 3)
                                             rawmyentry3 = rawtext3.split(" ")
                                             if(rawmyentry3 != None):
                                                 bets3 = int(rawmyentry3[13])
@@ -7170,7 +7177,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if(chanmsgnick == botname4 and "attackttl" in text):
                                             rawtext4 = text
                                             if pmtextmode is True:
-                                                    self.reply(irc, playbottext + " - {0}".format(text), 4)
+                                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 4)
                                             rawmyentry4 = rawtext4.split(" ")
                                             if(rawmyentry4 != None):
                                                 bets4 = int(rawmyentry4[13])
@@ -7200,7 +7207,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if(chanmsgnick == botname5 and "attackttl" in text):
                                             rawtext5 = text
                                             if pmtextmode is True:
-                                                    self.reply(irc, playbottext + " - {0}".format(text), 5)
+                                                    self.reply(irc, "{0} - {1}".format(playbottext, text), 5)
                                             rawmyentry5 = rawtext5.split(" ")
                                             if(rawmyentry5 != None):
                                                 bets5 = int(rawmyentry5[13])
@@ -7468,7 +7475,7 @@ class PlayBotMulti(callbacks.Plugin):
         
         self.playbotcheck(irc)
         if intervaltextmode is True:
-                self.replymulti(irc, playbottext + " - INTERVAL {0}".format(time.asctime()))
+                self.replymulti(irc, "{0} - INTERVAL {1}".format(playbottext, time.asctime()))
 
         botcheck1 = False
         botcheck2 = False
@@ -7583,15 +7590,15 @@ class PlayBotMulti(callbacks.Plugin):
                         if checkotherIrc.server == "unset":
                                 connectfail1 += 1
                                 if errortextmode is True:
-                                        self.replymulti(irc, playbottext + " - Server 1 Error")
+                                        self.replymulti(irc, "{0} - Server 1 Error".format(playbottext))
                 except NameError:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Network 1 not connected to supybot")
+                                self.replymulti(irc, "{0} - Network 1 not connected to supybot".format(playbottext))
                         netcheck1 = False
                         connectfail1 += 1
                 if connectfail1 > 0 and networkreconnect is True:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Connect Fail 1: {0}".format(connectfail1))
+                                self.replymulti(irc, "{0} - Connect Fail 1: {1}".format(playbottext, connectfail1))
                 if netcheck1 is False and networkreconnect is True:
                         serverPort = (servername, port)
                         newIrc = Owner._connect(netname, serverPort=serverPort,
@@ -7612,15 +7619,15 @@ class PlayBotMulti(callbacks.Plugin):
                         if checkotherIrc2.server == "unset":
                                 connectfail2 += 1
                                 if errortextmode is True:
-                                        self.replymulti(irc, playbottext + " - Server 2 Error")
+                                        self.replymulti(irc, "{0} - Server 2 Error".format(playbottext))
                 except NameError:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Network 2 not connected to supybot")
+                                self.replymulti(irc, "{0} - Network 2 not connected to supybot".format(playbottext))
                         netcheck2 = False
                         connectfail2 += 1
                 if connectfail2 > 0 and networkreconnect is True:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Connect Fail 2: {0}".format(connectfail2))
+                                self.replymulti(irc, "{0} - Connect Fail 2: {1}".format(playbottext, connectfail2))
                 if netcheck2 is False and networkreconnect is True:
                         serverPort2 = (servername2, port2)
                         newIrc2 = Owner2._connect(netname2, serverPort=serverPort2,
@@ -7640,15 +7647,15 @@ class PlayBotMulti(callbacks.Plugin):
                         if checkotherIrc3.server == "unset":
                                 connectfail3 += 1
                                 if errortextmode is True:
-                                        self.replymulti(irc, playbottext + " - Server 3 Error")
+                                        self.replymulti(irc, "{0} - Server 3 Error".format(playbottext))
                 except NameError:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Network 3 not connected to supybot")
+                                self.replymulti(irc, "{0} - Network 3 not connected to supybot".format(playbottext))
                         netcheck3 = False
                         connectfail3 += 1
                 if connectfail3 > 0 and networkreconnect is True:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Connect Fail 3: {0}".format(connectfail3))
+                                self.replymulti(irc, "{0} - Connect Fail 3: {1}".format(playbottext, connectfail3))
                 if netcheck3 is False and networkreconnect is True:
                         serverPort3 = (servername3, port3)
                         newIrc3 = Owner3._connect(netname3, serverPort=serverPort3,
@@ -7669,15 +7676,15 @@ class PlayBotMulti(callbacks.Plugin):
                         if checkotherIrc4.server == "unset":
                                 connectfail4 += 1
                                 if errortextmode is True:
-                                        self.replymulti(irc, playbottext + " - Server 4 Error")
+                                        self.replymulti(irc, "{0} - Server 4 Error".format(playbottext))
                 except NameError:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Network 4 not connected to supybot")
+                                self.replymulti(irc, "{0} - Network 4 not connected to supybot".format(playbottext))
                         netcheck4 = False
                         connectfail4 += 1
                 if connectfail4 > 0 and networkreconnect is True:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Connect Fail 4: {0}".format(connectfail4))
+                                self.replymulti(irc, "{0} - Connect Fail 4: {1}".format(playbottext, connectfail4))
                 if netcheck4 is False and networkreconnect is True:
                         serverPort4 = (servername4, port4)
                         newIrc4 = Owner4._connect(netname4, serverPort=serverPort4,
@@ -7698,15 +7705,15 @@ class PlayBotMulti(callbacks.Plugin):
                         if checkotherIrc5.server == "unset":
                                 connectfail5 += 1
                                 if errortextmode is True:
-                                        self.replymulti(irc, playbottext + " - Server 5 Error")
+                                        self.replymulti(irc, "{0} - Server 5 Error".format(playbottext))
                 except NameError:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Network 5 not connected to supybot")
+                                self.replymulti(irc, "{0} - Network 5 not connected to supybot".format(playbottext))
                         netcheck5 = False
                         connectfail5 += 1
                 if connectfail5 > 0 and networkreconnect is True:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Connect Fail 5: {0}".format(connectfail5))
+                                self.replymulti(irc, "{0} - Connect Fail 5: {1}".format(playbottext, connectfail5))
                 if netcheck5 is False and networkreconnect is True:
                         serverPort5 = (servername5, port5)
                         newIrc5 = Owner5._connect(netname5, serverPort=serverPort5,
@@ -7739,22 +7746,19 @@ class PlayBotMulti(callbacks.Plugin):
                             botcheck1 = True
                     if botcheck1 is False:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Game Bot 1 not in channel")
+                                self.replymulti(irc, "{0} - Game Bot 1 not in channel".format(playbottext))
                 except KeyError:
                     if errortextmode is True:
-                            self.replymulti(irc, playbottext + " - Game Bot 1 not in channel")
+                            self.replymulti(irc, "{0} - Game Bot 1 not in channel".format(playbottext))
                 if botcheck1 is True:
                         if("undernet" in netname.lower()):
                             try:
                                     hosttest = otherIrc.state.nickToHostmask(botname)
                                     if "RussellB@RussRelay.users.undernet.org" in hosttest:
-                                            self.replymulti(irc, playbottext + " - Game Bot 1 not in channel")
+                                            self.replymulti(irc, "{0} - Game Bot 1 not in channel".format(playbottext))
                                             botcheck1 = False
-                            except TypeError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 1 not in channel")
-                                    botcheck1 = False
-                            except KeyError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 1 not in channel")
+                            except:
+                                    self.replymulti(irc, "{0} - Game Bot 1 not in channel".format(playbottext))
                                     botcheck1 = False
         if char2 is True:
             chantest = otherIrc2.state.channels
@@ -7779,22 +7783,19 @@ class PlayBotMulti(callbacks.Plugin):
                             botcheck2 = True
                     if botcheck2 is False:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Game Bot 2 not in channel")
+                                self.replymulti(irc, "{0} - Game Bot 2 not in channel".format(playbottext))
                 except KeyError:
                     if errortextmode is True:
-                            self.replymulti(irc, playbottext + " - Game Bot 2 not in channel")
+                            self.replymulti(irc, "{0} - Game Bot 2 not in channel".format(playbottext))
                 if botcheck2 is True:
                         if("undernet" in netname2.lower()):
                             try:
                                     hosttest = otherIrc2.state.nickToHostmask(botname2)
                                     if "RussellB@RussRelay.users.undernet.org" in hosttest:
-                                            self.replymulti(irc, playbottext + " - Game Bot 2 not in channel")
+                                            self.replymulti(irc, "{0} - Game Bot 2 not in channel".format(playbottext))
                                             botcheck2 = False
-                            except TypeError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 2 not in channel")
-                                    botcheck2 = False
-                            except KeyError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 2 not in channel")
+                            except:
+                                    self.replymulti(irc, "{0} - Game Bot 2 not in channel".format(playbottext))
                                     botcheck2 = False
         if char3 is True:
             chantest = otherIrc3.state.channels
@@ -7819,22 +7820,19 @@ class PlayBotMulti(callbacks.Plugin):
                             botcheck3 = True
                     if botcheck3 is False:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Game Bot 3 not in channel")
+                                self.replymulti(irc, "{0} - Game Bot 3 not in channel".format(playbottext))
                 except KeyError:
                     if errortextmode is True:
-                            self.replymulti(irc, playbottext + " - Game Bot 3 not in channel")
+                            self.replymulti(irc, "{0} - Game Bot 3 not in channel".format(playbottext))
                 if botcheck3 is True:
                         if("undernet" in netname3.lower()):
                             try:
                                     hosttest = otherIrc3.state.nickToHostmask(botname3)
                                     if "RussellB@RussRelay.users.undernet.org" in hosttest:
-                                            self.replymulti(irc, playbottext + " - Game Bot 3 not in channel")
+                                            self.replymulti(irc, "{0} - Game Bot 3 not in channel".format(playbottext))
                                             botcheck3 = False
-                            except TypeError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 3 not in channel")
-                                    botcheck3 = False
-                            except KeyError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 3 not in channel")
+                            except:
+                                    self.replymulti(irc, "{0} - Game Bot 3 not in channel".format(playbottext))
                                     botcheck3 = False
         if char4 is True:
             chantest = otherIrc4.state.channels
@@ -7859,22 +7857,19 @@ class PlayBotMulti(callbacks.Plugin):
                             botcheck4 = True
                     if botcheck4 is False:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Game Bot 4 not in channel")
+                                self.replymulti(irc, "{0} - Game Bot 4 not in channel".format(playbottext))
                 except KeyError:
                     if errortextmode is True:
-                            self.replymulti(irc, playbottext + " - Game Bot 4 not in channel")
+                            self.replymulti(irc, "{0} - Game Bot 4 not in channel".format(playbottext))
                 if botcheck4 is True:
                         if("undernet" in netname4.lower()):
                             try:
                                     hosttest = otherIrc4.state.nickToHostmask(botname4)
                                     if "RussellB@RussRelay.users.undernet.org" in hosttest:
-                                            self.replymulti(irc, playbottext + " - Game Bot 4 not in channel")
+                                            self.replymulti(irc, "{0} - Game Bot 4 not in channel".format(playbottext))
                                             botcheck4 = False
-                            except TypeError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 4 not in channel")
-                                    botcheck4 = False
-                            except KeyError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 4 not in channel")
+                            except:
+                                    self.replymulti(irc, "{0} - Game Bot 4 not in channel".format(playbottext))
                                     botcheck4 = False
         if char5 is True:
             chantest = otherIrc5.state.channels
@@ -7899,22 +7894,19 @@ class PlayBotMulti(callbacks.Plugin):
                             botcheck5 = True
                     if botcheck5 is False:
                         if errortextmode is True:
-                                self.replymulti(irc, playbottext + " - Game Bot 5 not in channel")
+                                self.replymulti(irc, "{0} - Game Bot 5 not in channel".format(playbottext))
                 except KeyError:
                     if errortextmode is True:
-                            self.replymulti(irc, playbottext + " - Game Bot 5 not in channel")
+                            self.replymulti(irc, "{0} - Game Bot 5 not in channel".format(playbottext))
                 if botcheck5 is True:
                         if("undernet" in netname5.lower()):
                             try:
                                     hosttest = otherIrc5.state.nickToHostmask(botname5)
                                     if "RussellB@RussRelay.users.undernet.org" in hosttest:
-                                            self.replymulti(irc, playbottext + " - Game Bot 5 not in channel")
+                                            self.replymulti(irc, "{0} - Game Bot 5 not in channel".format(playbottext))
                                             botcheck5 = False
-                            except TypeError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 5 not in channel")
-                                    botcheck5 = False
-                            except KeyError:
-                                    self.replymulti(irc, playbottext + " - Game Bot 5 not in channel")
+                            except:
+                                    self.replymulti(irc, "{0} - Game Bot 5 not in channel".format(playbottext))
                                     botcheck5 = False
 
         if rawstatsmode is True:
@@ -7999,20 +7991,18 @@ class PlayBotMulti(callbacks.Plugin):
                             if(myentry[15] == "1"):
                                     online1 = True
                     except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 1)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 1)
                     except TypeError:
-                        self.reply(irc, playbottext + " - Character {0} does not exist".format(name),1 )
+                        self.reply(irc, "{0} - Character {1} does not exist".format(playbottext, name),1 )
                     except RuntimeError:
-                            self.reply(irc, playbottext + " - Recursion Error",1 )
+                            self.reply(irc, "{0} - Recursion Error".format(playbottext),1 )
 
                 if botcheck1 is True:
                         try:
                             hosttest1 = otherIrc.state.nickToHostmask(botname)
                             if bothostmask1 in hosttest1:
                                     bothostcheck1 = True
-                        except TypeError:
-                            bothostcheck1 = False
-                        except KeyError:
+                        except:
                             bothostcheck1 = False
 
                 if botcheck1 is True:
@@ -8027,7 +8017,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if botname == user:
                                         opcheck = True
                         except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 1)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 1)
 
                 if rawstatsmode is False and webworks is True and online1 is False and botcheck1 is True:
                         if(opcheck is True) or (opcheck is False and bothostcheck1 is True):
@@ -8050,20 +8040,18 @@ class PlayBotMulti(callbacks.Plugin):
                             if(myentry2[15] == "1"):
                                     online2 = True
                     except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 2)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 2)
                     except TypeError:
-                        self.reply(irc, playbottext + " - Character {0} does not exist".format(name2),2 )
+                        self.reply(irc, "{0} - Character {1} does not exist".format(playbottext, name2),2 )
                     except RuntimeError:
-                            self.reply(irc, playbottext + " - Recursion Error",2 )
+                            self.reply(irc, "{0} - Recursion Error".format(playbottext),2 )
 
                 if botcheck2 is True:
                         try:
                             hosttest2 = otherIrc2.state.nickToHostmask(botname2)
                             if bothostmask2 in hosttest2:
                                     bothostcheck2 = True
-                        except TypeError:
-                            bothostcheck2 = False
-                        except KeyError:
+                        except:
                             bothostcheck2 = False
 
                 if botcheck2 is True:
@@ -8078,7 +8066,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if botname2 == user:
                                         opcheck2 = True
                         except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 2)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 2)
 
                 if rawstatsmode is False and webworks is True and online2 is False and botcheck2 is True:
                         if(opcheck2 is True) or (opcheck2 is False and bothostcheck2 is True):
@@ -8101,20 +8089,18 @@ class PlayBotMulti(callbacks.Plugin):
                             if(myentry3[15] == "1"):
                                     online3 = True
                     except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 3)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 3)
                     except TypeError:
-                                self.reply(irc, playbottext + " - Character {0} does not exist".format(name3),3 )
+                                self.reply(irc, "{0} - Character {1} does not exist".format(playbottext, name3),3 )
                     except RuntimeError:
-                            self.reply(irc, playbottext + " - Recursion Error",3 )
+                            self.reply(irc, "{0} - Recursion Error".format(playbottext),3 )
 
                 if botcheck3 is True:
                         try:
                             hosttest3 = otherIrc3.state.nickToHostmask(botname3)
                             if bothostmask3 in hosttest3:
                                     bothostcheck3 = True
-                        except TypeError:
-                            bothostcheck3 = False
-                        except KeyError:
+                        except:
                             bothostcheck3 = False
 
                 if botcheck3 is True:
@@ -8129,7 +8115,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if botname3 == user:
                                         opcheck3 = True
                         except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 3)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 3)
 
                 if rawstatsmode is False and webworks is True and online3 is False and botcheck3 is True:
                         if(opcheck3 is True) or (opcheck3 is False and bothostcheck3 is True):
@@ -8152,20 +8138,18 @@ class PlayBotMulti(callbacks.Plugin):
                             if(myentry4[15] == "1"):
                                     online4 = True
                     except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 4)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 4)
                     except TypeError:
-                                self.reply(irc, playbottext + " - Character {0} does not exist".format(name4),4 )
+                                self.reply(irc, "{0} - Character {1} does not exist".format(playbottext, name4),4 )
                     except RuntimeError:
-                            self.reply(irc, playbottext + " - Recursion Error",4 )
+                            self.reply(irc, "{0} - Recursion Error".format(playbottext),4 )
 
                 if botcheck4 is True:
                         try:
                             hosttest4 = otherIrc4.state.nickToHostmask(botname4)
                             if bothostmask4 in hosttest4:
                                     bothostcheck4 = True
-                        except TypeError:
-                            bothostcheck4 = False
-                        except KeyError:
+                        except:
                             bothostcheck4 = False
 
                 if botcheck4 is True:
@@ -8180,7 +8164,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if botname4 == user:
                                         opcheck4 = True
                         except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 4)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 4)
 
                 if rawstatsmode is False and webworks is True and online4 is False and botcheck4 is True:
                         if(opcheck4 is True) or (opcheck4 is False and bothostcheck4 is True):
@@ -8203,20 +8187,18 @@ class PlayBotMulti(callbacks.Plugin):
                             if(myentry5[15] == "1"):
                                     online5 = True
                     except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 5)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 5)
                     except TypeError:
-                                self.reply(irc, playbottext + " - Character {0} does not exist".format(name5),5 )
+                                self.reply(irc, "{0} - Character {0} does not exist".format(playbottext, name5),5 )
                     except RuntimeError:
-                            self.reply(irc, playbottext + " - Recursion Error",5 )
+                            self.reply(irc, "{0} - Recursion Error".format(playbottext),5 )
 
                 if botcheck5 is True:
                         try:
                             hosttest5 = otherIrc5.state.nickToHostmask(botname5)
                             if bothostmask5 in hosttest5:
                                     bothostcheck5 = True
-                        except TypeError:
-                            bothostcheck5 = False
-                        except KeyError:
+                        except:
                             bothostcheck5 = False
 
                 if botcheck5 is True:
@@ -8231,7 +8213,7 @@ class PlayBotMulti(callbacks.Plugin):
                                     if botname5 == user:
                                         opcheck5 = True
                         except KeyError:
-                            self.reply(irc, playbottext + " - Key Error", 5)
+                            self.reply(irc, "{0} - Key Error".format(playbottext), 5)
 
                 if rawstatsmode is False and webworks is True and online5 is False and botcheck5 is True:
                         if(opcheck5 is True) or (opcheck5 is False and bothostcheck5 is True):
@@ -8426,7 +8408,7 @@ class PlayBotMulti(callbacks.Plugin):
         if rawstatsmodeon is True:
              rawstatsmode = True
              if bottextmode is True:
-                     self.replymulti(irc, playbottext + " - Rawstats Mode Activated")
+                     self.replymulti(irc, "{0} - Rawstats Mode Activated".format(playbottext))
              self.configwrite()
         if rawplayersmodeon is True:
                 rawstatsmode = False
@@ -8434,7 +8416,7 @@ class PlayBotMulti(callbacks.Plugin):
                         self.webdata(irc)
                         self.newitemslister(irc, 1, 1)
                 if bottextmode is True:
-                        self.replymulti(irc, playbottext + " - Rawplayers Mode Activated")
+                        self.replymulti(irc, "{0} - Rawplayers Mode Activated".format(playbottext))
                 if char1 is True:
                         rawmyentry = None
                 if char2 is True:
@@ -8456,7 +8438,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if online1 is True:
                                 if ttl == oldttl:
                                         if errortextmode is True:
-                                                self.replymulti(irc, playbottext + " - TTL Frozen1")
+                                                self.replymulti(irc, "{0} - TTL Frozen1".format(playbottext))
                                         ttlfrozen1 += 1
                         if ttlfrozen1 > charcount:
                                 if(nolag1 is True) or (nolag1 is False and levelrank1 >= laglevel):
@@ -8468,7 +8450,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if online2 is True:
                                 if ttl2 == oldttl2:
                                         if errortextmode is True:
-                                                self.replymulti(irc, playbottext + " - TTL Frozen2")
+                                                self.replymulti(irc, "{0} - TTL Frozen2".format(playbottext))
                                         ttlfrozen2 += 1
                         if ttlfrozen2 > charcount:
                                 if(nolag2 is True) or (nolag2 is False and levelrank1 >= laglevel):
@@ -8480,7 +8462,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if online3 is True:
                                 if ttl3 == oldttl3:
                                         if errortextmode is True:
-                                                self.replymulti(irc, playbottext + " - TTL Frozen3")
+                                                self.replymulti(irc, "{0} - TTL Frozen3".format(playbottext))
                                         ttlfrozen3 += 1
                         if ttlfrozen3 > charcount:
                                 if(nolag3 is True) or (nolag3 is False and levelrank1 >= laglevel):
@@ -8492,7 +8474,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if online4 is True:
                                 if ttl4 == oldttl4:
                                         if errortextmode is True:
-                                                self.replymulti(irc, playbottext + " - TTL Frozen4")
+                                                self.replymulti(irc, "{0} - TTL Frozen4".format(playbottext))
                                         ttlfrozen4 += 1
                         if ttlfrozen4 > charcount:
                                 if(nolag4 is True) or (nolag4 is False and levelrank1 >= laglevel):
@@ -8504,7 +8486,7 @@ class PlayBotMulti(callbacks.Plugin):
                         if online5 is True:
                                 if ttl5 == oldttl5:
                                         if errortextmode is True:
-                                                self.replymulti(irc, playbottext + " - TTL Frozen5")
+                                                self.replymulti(irc, "{0} - TTL Frozen5".format(playbottext))
                                         ttlfrozen5 += 1
                         if ttlfrozen5 > charcount:
                                 if(nolag5 is True) or (nolag5 is False and levelrank1 >= laglevel):
@@ -8513,7 +8495,7 @@ class PlayBotMulti(callbacks.Plugin):
                         rawstatsmode = True
                         ttlfrozenmode = True
                         if bottextmode is True:
-                                self.replymulti(irc, playbottext + " - Rawstats Mode Activated")
+                                self.replymulti(irc, "{0} - Rawstats Mode Activated".format(playbottext))
 
                 if (ttlfrozen1 > charcount or ttlfrozen2 > charcount or ttlfrozen3 > charcount or ttlfrozen4 > charcount or ttlfrozen5 > charcount):
                         ttlfrozen1 = 0
@@ -8701,7 +8683,7 @@ class PlayBotMulti(callbacks.Plugin):
         nextTime = time.time() + interval
         
         if intervaltextmode is True:
-                self.replymulti(irc, playbottext + " - Checking timers every {0} minutes".format(interval // 60))
+                self.replymulti(irc, "{0} - Checking timers every {1} minutes".format(playbottext, interval // 60))
         if gameactive is True:
             try:
                 schedule.addEvent(looppm, nextTime, "looppm")
@@ -8716,6 +8698,12 @@ class PlayBotMulti(callbacks.Plugin):
         if autostartmode is True:
                 self.autostart(irc)
 
+    def die(self):
+        self.__parent.die()
+        try:
+                schedule.removeEvent('looppm')
+        except:
+                return
 
 Class = PlayBotMulti
 
