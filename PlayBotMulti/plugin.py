@@ -66,7 +66,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "Multirpg Playbot Script"
-__module_version__ = "3.3"
+__module_version__ = "3.4"
 __module_description__ = "Multirpg Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -121,7 +121,7 @@ networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      
                     ["Koach",       "172.105.168.90",           False,  2,      6667,   False,  ".skralg.com"], \
                     ["Libera",      "irc.libera.chat",          False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["Libera",      "130.185.232.126",          False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
-                    ["Pissnet",     "irc.shitposting.space",    False,  1,      6667,   False,  ".skralg.com"], \
+                    ["Pissnet",     "irc.letspiss.net",         False,  1,      6667,   False,  ".skralg.com"], \
                     ["Pissnet",     "91.92.144.105",            False,  2,      6667,   False,  ".skralg.com"], \
                     ["QuakeNet",    "irc.quakenet.org",         False,  1,      6667,   False,  "multirpg@multirpg.users.quakenet.org"], \
                     ["QuakeNet",    "188.240.145.70",           False,  2,      6667,   False,  "multirpg@multirpg.users.quakenet.org"], \
@@ -130,15 +130,17 @@ networklist = [     ["AyoChat",     "irc.ayochat.or.id",        False,  1,      
                     ["SkyChatz",    "irc.skychatz.org",         False,  1,      6667,   False,  "multirpg@skychatz.user.multirpg"],  \
                     ["SkyChatz",    "15.235.141.21",            False,  2,      6667,   False,  "multirpg@skychatz.user.multirpg"],  \
                     ["Techtronix",  "irc.techtronix.net",       True,   1,      6697,   True,   "multirpg@multirpg.net"],  \
-                    ["Techtronix",  "35.229.28.106",            True,   2,      6697,   True,   "multirpg@multirpg.net"],  \
+                    ["Techtronix",  "storm.techtronix.net",     True,   2,      6697,   True,   "multirpg@multirpg.net"],  \
                     ["Undernet",    "irc.undernet.org",         False,  1,      6667,   False,  "multirpg@idlerpg.users.undernet.org"], \
                     ["Undernet",    "185.117.74.172",           False,  2,      6667,   False,  "multirpg@idlerpg.users.undernet.org"], \
                     ["UnderX",      "irc.underx.org",           False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["UnderX",      "150.136.80.10",            False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
                     ["UniversalNet","irc.universalnet.org",     False,  1,      6667,   False,  "multirpg@venus.skralg.com"], \
-                    ["UniversalNet","62.171.172.8",             False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
+                    ["UniversalNet","57.129.12.188",            False,  2,      6667,   False,  "multirpg@venus.skralg.com"], \
+                    ["VibeTalk",    "irc.vibetalk.net",         False,  1,      6667,   False,  "multirpg@tsqrt.skralg.com"], \
+                    ["VibeTalk",    "95.182.98.52",             False,  2,      6667,   False,  "multirpg@tsqrt.skralg.com"], \
                     ["Virtulus",    "virtulus.ftp.sh",          True,   1,      6697,   True,   "multirpg@B790DC3F.D0CDF40.88109D7.IP"], \
-                    ["Virtulus",    "129.153.131.239",          True,   2,      6697,   True,   "multirpg@B790DC3F.D0CDF40.88109D7.IP"] ]
+                    ["Virtulus",    "virtulus.ftp.sh",          True,   2,      6697,   True,   "multirpg@B790DC3F.D0CDF40.88109D7.IP"] ]
 
 creeps.reverse()
 monsters.reverse()
@@ -5239,6 +5241,7 @@ class PlayBotMulti(callbacks.Plugin):
             global weapon
             global betmoney
             global bets
+
             global upgradeall
             global itemupgrader
             global sethero
@@ -8394,15 +8397,17 @@ class PlayBotMulti(callbacks.Plugin):
         opswitch = False
         if(opcheck is False or opcheck2 is False or opcheck3 is False or opcheck4 is False or opcheck5 is False):
                 opswitch = True
-        if(rawstatsswitch is False and rawstatsmode is True and webworks is True and ttlfrozenmode is False and opswitch is False):
-                rawplayersmodeon = True
-        if(rawstatsswitch is False and rawstatsmode is False and webworks is False and webfail >= 3 and opswitch is False):
-                rawstatsmodeon = True
-        if(levelrank1 < laglevel and rawstatsswitch is True and rawstatsmode is True and opswitch is False):
-                if(nolag1 is False or nolag2 is False or nolag3 is False or nolag4 is False or nolag5 is False):
+        if(rawstatsswitch is False and opswitch is False):
+                if(rawstatsmode is True and webworks is True and ttlfrozenmode is False):
                         rawplayersmodeon = True
-        if(levelrank1 >= laglevel and rawstatsswitch is True and rawstatsmode is False and opswitch is False):
-                rawstatsmodeon = True
+                if(rawstatsmode is False and webworks is False and webfail >= 3):
+                        rawstatsmodeon = True
+        if(rawstatsswitch is True and opswitch is False):
+                if(levelrank1 < laglevel and rawstatsmode is True):
+                        if(nolag1 is False or nolag2 is False or nolag3 is False or nolag4 is False or nolag5 is False):
+                                rawplayersmodeon = True
+                if(levelrank1 >= laglevel and rawstatsmode is False):
+                        rawstatsmodeon = True
         if(rawstatsmode is True and opswitch is True):
                 rawplayersmodeon = True
         if rawstatsmodeon is True:
