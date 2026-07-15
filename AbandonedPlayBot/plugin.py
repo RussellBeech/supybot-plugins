@@ -2166,7 +2166,7 @@ class AbandonedPlayBot(callbacks.Plugin):
                         if var == "level":
                                 level = num
                         if var == "life":
-                                life = num
+                                life = int(num)
                         if var == "lotto11":
                                 lotto11 = num
                         if var == "lotto12":
