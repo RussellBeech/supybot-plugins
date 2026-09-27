@@ -19,6 +19,7 @@ Multi - Up to 5 players.
 
 
 MultiGamePlayBot and MultiGamePlayBotMulti are PlayBots for IdleRPG games on
+
 Abandoned-Irc #zw-idlerpg, Irc-Nerds #idlerpg and TwistedNet #idlerpg.
  
 The different version are:  
