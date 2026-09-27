@@ -1,5 +1,5 @@
 ###
-# Copyright (c) 2021-2026, Russell Beech
+# Copyright (c) 2021-2025, Russell Beech
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 ###
 
 """
-AbandonedPlayBot: Abandoned-IRC IdleRPG PlayBot
+MultiGamePlayBotMulti: EfNet, Irc-Nerds, Abandoned-Irc, TwistedNet and EvilNet PlayBot
 """
 
 import supybot

@@ -61,15 +61,15 @@ if sys.version_info[0] < 3:
 
 try:
     from supybot.i18n import PluginInternationalization
-    _ = PluginInternationalization('AbandonedPlayBot')
+    _ = PluginInternationalization('MultiGamedPlayBot')
 except ImportError:
     # Placeholder that allows to run the plugin on a bot
     # without the i18n module
     _ = lambda x: x
 
-__module_name__ = "Abandoned-IRC #ZW-IdleRPG Playbot Script"
-__module_version__ = "2.1"
-__module_description__ = "Abandoned-IRC #ZW-IdleRPG Playbot Script"
+__module_name__ = "MultiGame IdleRPG Playbot Script"
+__module_version__ = "2.2"
+__module_description__ = "MultiGame IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
 creeps = [      ["Roach",       1500],   \
@@ -126,7 +126,11 @@ monsters = [    ["Blue_Dragon",         7500],  \
 creeps.reverse()
 monsters.reverse()
 
-website = "https://irpg.abandoned-irc.net"
+#               Network                 Website                                 ChanName        BotName         GameID 
+gamelist = [    ["abandoned",           "https://irpg.abandoned-irc.net",       "#zw-idlerpg",  "IdleRPG",      1],  \
+                ["irc-nerds",           "https://nerd-idlerpg.ddns.net",        "#idlerpg",     "IdleRPG",      2],  \
+                ["twistednet",          "https://idlerpg.twistednet.org",       "#idlerpg",     "idleRPG",      3]   ]
+
 website2 = "playerview.php"
 website3 = "/players.php"
 russweb = "http://russellb.x10.mx/"
@@ -150,8 +154,6 @@ blackbuyspend = True
 blackbuyspend14 = True
 getgems = True
 fightmode = True
-channame = "#zw-idlerpg"
-botname = "IdleRPG"
 creepattack = True # True = On, False = Off - Autocreep selection
 setcreeptarget = "Werewolf" # Sets creep target. creepattack needs to be False to use
 scrollssum = 3000 # Itemscore you start buying scrolls at
@@ -171,6 +173,10 @@ slaysum = 1000 # minimum sum you start slaying without mana from
 loginsettingslist = True # True = on, False = off - Settings List at start
 
 # declare stats as global
+channame = None
+botname = None
+website = None
+gameid = 0
 name = None
 pswd = None
 charcount = 0
@@ -240,13 +246,13 @@ botdisable1 = False
 autostartmode = False
 playbotcount = 0
 playbottext = None
-playbotid = "AS"
+playbotid = "MGS"
 pbcount = 0
 
-abandoned = False
-abandonedmulti = False
+multigame = False
+multigamemulti = False
 
-fileprefix = "AbandonedPlayBotconfig.txt"
+fileprefix = "MultiGamePlayBotconfig.txt"
 path = conf.supybot.directories.data
 filename = path.dirize(fileprefix)
 try:
@@ -255,7 +261,7 @@ try:
         f.close()
 except:
         configList = []
-fileprefix2 = "autostartsingleconfigas.txt"
+fileprefix2 = "autostartsingleconfigmg.txt"
 path = conf.supybot.directories.data
 filename2 = path.dirize(fileprefix2)
 try:
@@ -264,10 +270,10 @@ try:
         f.close()
 except:
         autoconfigList = []
-fileprefix3 = "abandonedsingleplayers.txt"
+fileprefix3 = "multigamesingleplayers.txt"
 path = conf.supybot.directories.data
 filename3 = path.dirize(fileprefix3)
-fileprefix4 = "abandonedmultiplayers.txt"
+fileprefix4 = "multigamemultiplayers.txt"
 path = conf.supybot.directories.data
 filename4 = path.dirize(fileprefix4)
 
@@ -317,8 +323,8 @@ for entry in configList:
         if(entry[0] == "xpupgrade"):
                 xpupgrade = entry[1]
 
-class AbandonedPlayBot(callbacks.Plugin):
-    """Abandoned PlayBot Idlerpg"""
+class MultiGamePlayBot(callbacks.Plugin):
+    """MultiGame PlayBot Idlerpg"""
     threaded = True
 
     def _getIrc(self, network):
@@ -338,7 +344,7 @@ class AbandonedPlayBot(callbacks.Plugin):
         webversion = None
         gitversion = None
         newversion = 0
-        versionfilename = "playbotversionabandonedsupy.txt"
+        versionfilename = "playbotversionmultigamesupy.txt"
 
         try:
                 if python3 is False:
@@ -731,9 +737,13 @@ class AbandonedPlayBot(callbacks.Plugin):
         global botname
         global channame
         global botdisable1
+        global netname
         
         botcount1 = 0
 
+        for entry in gamelist:
+                if entry[0] in netname.lower():
+                        botname = entry[3]
         bottest = botname
         botentry = []
 
@@ -787,21 +797,21 @@ class AbandonedPlayBot(callbacks.Plugin):
         global playbottext
         global playbotid
         global pbcount
-        global abandoned
-        global abandonedmulti
+        global multigame
+        global multigamemulti
 
         playbotcount = 0
         pbcount = 0
         quakeon = True
         quakemultion = True
-        abandonedon = True
-        abandonedmultion = True
+        multigameon = True
+        multigamemultion = True
         playbotsingleon = True
         playbotmultion = True
         quake = False
         quakemulti = False
-        abandoned = False
-        abandonedmulti = False
+        multigame = False
+        multigamemulti = False
         playbotsingle = False
         playbotmulti = False
         
@@ -814,13 +824,13 @@ class AbandonedPlayBot(callbacks.Plugin):
         except:
                 quakemultion = False
         try:
-                abandonedcheck = conf.supybot.plugins.get("AbandonedPlayBot")
+                multigamecheck = conf.supybot.plugins.get("MultiGamePlayBot")
         except:
-                abandonedon = False
+                multigameon = False
         try:
-                abandonedmulticheck = conf.supybot.plugins.get("AbandonedPlayBotMulti")
+                multigamemulticheck = conf.supybot.plugins.get("MultiGamePlayBotMulti")
         except:
-                abandonedmultion = False
+                multigamemultion = False
         try:
                 playbotsinglecheck = conf.supybot.plugins.get("PlayBotSingle")
         except:
@@ -840,15 +850,15 @@ class AbandonedPlayBot(callbacks.Plugin):
                 if quakemulti is True:
                         playbotcount += 1
 
-        if abandonedon is True:
-                abandoned = conf.supybot.plugins.AbandonedPlayBot()
-                if abandoned is True:
+        if multigameon is True:
+                multigame = conf.supybot.plugins.MultiGamePlayBot()
+                if multigame is True:
                         playbotcount += 1
                         pbcount += 1
 
-        if abandonedmultion is True:
-                abandonedmulti = conf.supybot.plugins.AbandonedPlayBotMulti()
-                if abandonedmulti is True:
+        if multigamemultion is True:
+                multigamemulti = conf.supybot.plugins.MultiGamePlayBotMulti()
+                if multigamemulti is True:
                         playbotcount += 1
                         pbcount += 1
 
@@ -870,6 +880,8 @@ class AbandonedPlayBot(callbacks.Plugin):
         global name
         global pswd
         global netname
+        global channame
+        global botname
         global charcount
         global nickname
         global gameactive
@@ -877,6 +889,9 @@ class AbandonedPlayBot(callbacks.Plugin):
         global supynick
         global Owner
         global autostartmode
+        global gamelist
+        global website
+        global gameid
 
         for entry in autoconfigList:
                 if(entry[0] == "name"):
@@ -904,16 +919,23 @@ class AbandonedPlayBot(callbacks.Plugin):
                         charcount = 0
 
                 if bootdelay is True:
-                        def bootloopas():
+                        def bootloopmgs():
                             self.autostart(irc)
                         delayTime = time.time() + 60
                         
                         try:
-                                schedule.addEvent(bootloopas, delayTime, "bootloopas")
+                                schedule.addEvent(bootloopmgs, delayTime, "bootloopmgs")
                         except AssertionError:
-                                schedule.removeEvent('bootloopas')
-                                schedule.addEvent(bootloopas, delayTime, "bootloopas")
+                                schedule.removeEvent('bootloopmgs')
+                                schedule.addEvent(bootloopmgs, delayTime, "bootloopmgs")
                         return
+
+                for entry in gamelist:
+                        if entry[0] in netname.lower():
+                                website = entry[1]
+                                channame = entry[2]
+                                botname = entry[3]
+                                gameid = entry[4]
 
         irc = world.getIrc(netname)
         if charcount == 0:
@@ -941,10 +963,15 @@ class AbandonedPlayBot(callbacks.Plugin):
         global pswd
         global netname
         global nickname
+        global channame
         global gameactive
         global charcount
         global otherIrc
         global supynick
+        global gamelist
+        global website
+        global botname
+        global gameid
         global playerspagelist
         global webworks
         global webworks2
@@ -953,19 +980,37 @@ class AbandonedPlayBot(callbacks.Plugin):
         charcount += 1
 
         if charcount == 1:
+                netcheck = False
                 gameactive = True
-                netname = self._getIrcName(irc)
                 nickname = msg.nick
+                netname = self._getIrcName(irc)
                 supynick = irc.nick
                 otherIrc = self._getIrc(netname)
                 namecheck = False
+                netlist = []
 
-                if "undernet" in netname.lower():
-                        irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                for entry in gamelist:
+                        if entry[0] in netname.lower():
+                                website = entry[1]
+                                channame = entry[2]
+                                botname = entry[3]
+                                gameid = entry[4]
+                                netcheck = True
+
+                if netcheck is False:
+                        for entry in gamelist:
+                                netlist.append( ( entry[0] ) )
+                        irc.error("Networks supported: {0}".format(netlist))
+                        irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname))
                         charcount = 0
-                if "quakenet" in netname.lower():
-                        irc.error("You need to use the QuakeNet version of PlayBot")
-                        charcount = 0
+
+                if charcount == 1:
+                        if "undernet" in netname.lower():
+                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                                charcount = 0
+                        if "quakenet" in netname.lower():
+                                irc.error("You need to use the QuakeNet version of PlayBot")
+                                charcount = 0
 
                 if charcount == 1:
                         self.playbotcheck(irc)
@@ -976,7 +1021,7 @@ class AbandonedPlayBot(callbacks.Plugin):
                                         name = args2[0]
                                         pswd = args2[1]
                         except IndexError:
-                                irc.error("To log in use <bot> abandonedplaybot login CharName Password" )
+                                irc.error("To log in use <bot> multigameplaybot login CharName Password" )
                                 
                         self.webdata(irc)
                         self.webdata2(irc)
@@ -1006,34 +1051,42 @@ class AbandonedPlayBot(callbacks.Plugin):
                                 multinetname2 = None
                                 multinetname3 = None
                                 multinetname4 = None
+                                multigameid = 0
+                                multigameid2 = 0
+                                multigameid3 = 0
+                                multigameid4 = 0
                                 for entry in multiplayerlist:
                                         count += 1
                                         if count == 1:
                                                 multiname = entry[1]
                                                 multinetname = entry[3]
+                                                multigameid = entry[5]
                                         if count == 2:
                                                 multiname2 = entry[1]
                                                 multinetname2 = entry[3]
+                                                multigameid2 = entry[5]
                                         if count == 3:
                                                 multiname3 = entry[1]
                                                 multinetname3 = entry[3]
+                                                multigameid3 = entry[5]
                                         if count == 4:
                                                 multiname4 = entry[1]
                                                 multinetname4 = entry[3]
-                                if(name == multiname or name == multiname2 or name == multiname3 or name == multiname4):
-                                        irc.error("Character {0} is already logged in on AbandonedPlayBotMulti".format(name))
+                                                multigameid4 = entry[5]
+                                if((name == multiname and gameid == multigameid) or (name == multiname2 and gameid == multigameid2) or (name == multiname3 and gameid == multigameid3) or (name == multiname4 and gameid == multigameid4)):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMulti".format(name))
                                         charcount = 0
                                 if(netname == multinetname):
-                                        irc.error("Character {0} is already logged in on AbandonedPlayBotMulti".format(multiname))
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMulti".format(multiname))
                                         charcount = 0
                                 if(netname == multinetname2):
-                                        irc.error("Character {0} is already logged in on AbandonedPlayBotMulti".format(multiname2))
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMulti".format(multiname2))
                                         charcount = 0
                                 if(netname == multinetname3):
-                                        irc.error("Character {0} is already logged in on AbandonedPlayBotMulti".format(multiname3))
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMulti".format(multiname3))
                                         charcount = 0
                                 if(netname == multinetname4):
-                                        irc.error("Character {0} is already logged in on AbandonedPlayBotMulti".format(multiname4))
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMulti".format(multiname4))
                                         charcount = 0
 
                 if charcount == 0:
@@ -1141,7 +1194,7 @@ class AbandonedPlayBot(callbacks.Plugin):
                 self.reply(irc, "Current SlaySum Minimum ItemScore: {0}.  If you want to change it use 'setoption slaysum number' command".format(slaysum))
                 self.reply(irc, "Current XPSpend for xpget item upgrades: {0}.  If you want to change it use 'setoption xpspend number' command".format(xpspend))
                 self.reply(irc, " ")
-                self.reply(irc, "For a list of PlayBot commands use <bot> abandonedplaybot help")
+                self.reply(irc, "For a list of PlayBot commands use <bot> multigameplaybot help")
                 self.reply(irc, " ")
         self.versionchecker(irc)
         self.configcheck(irc)
@@ -1176,7 +1229,7 @@ class AbandonedPlayBot(callbacks.Plugin):
                     self.configwrite()
                     self.configwrite2()
                 try:
-                    schedule.removeEvent('loopas')
+                    schedule.removeEvent('loopmgs')
                 except KeyError:
                     irc.error("You are not logged in")
 
@@ -1196,87 +1249,87 @@ class AbandonedPlayBot(callbacks.Plugin):
 
     logoutgame = wrap(logoutgame, [("checkCapability", "admin")])
 
-    def aplayerslist(self, irc, msg, args):
+    def mgplayerslist(self, irc, msg, args):
         """takes no arguments
 
-        Lists players on all Abandoned plugins loaded
+        Lists players on all MultiGame plugins loaded
         """
 
-        global abandoned
-        global abandonedmulti
+        global multigame
+        global multigamemulti
 
         self.playbotcheck(irc)
        
-        if abandoned is True:
-                afileprefix3 = "abandonedsingleplayers.txt"
+        if multigame is True:
+                mgfileprefix3 = "multigamesingleplayers.txt"
                 path = conf.supybot.directories.data
-                afilename3 = path.dirize(afileprefix3)
-                acheck = True
+                mgfilename3 = path.dirize(mgfileprefix3)
+                mgcheck = True
                 try:
-                        f = open(afilename3,"rb")
+                        f = open(mgfilename3,"rb")
                         playerListS = pickle.load(f)
                         f.close()
                 except:
                         playerListS = []
                 try:
-                        asinglename = playerListS[0][1]
-                        asinglenetname = playerListS[0][3]
+                        mgsinglename = playerListS[0][1]
+                        mgsinglenetname = playerListS[0][3]
                 except IndexError:
-                        irc.reply("No Players Logged in on AbandonedPlayBot", private=True)
+                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
                         irc.reply(" ", private=True)
                         irc.reply(" ", private=True)
-                        acheck = False
-                if acheck is True:
-                        irc.reply("Abandoned PlayBot Single", private=True)
+                        mgcheck = False
+                if mgcheck is True:
+                        irc.reply("MultiGame PlayBot Single", private=True)
                         irc.reply(" ", private=True)
-                        irc.reply("Player Character - {0}.  Network {1}".format(asinglename, asinglenetname), private=True)
+                        irc.reply("Player Character - {0}.  Network {1}".format(mgsinglename, mgsinglenetname), private=True)
                         irc.reply(" ", private=True)
                         irc.reply(" ", private=True)
 
-        if abandonedmulti is True:
-                afileprefix4 = "abandonedmultiplayers.txt"
+        if multigamemulti is True:
+                mgfileprefix4 = "multigamemultiplayers.txt"
                 path = conf.supybot.directories.data
-                afilename4 = path.dirize(afileprefix4)
-                amcheck = False
+                mgfilename4 = path.dirize(mgfileprefix4)
+                mgmcheck = False
                 try:
-                        f = open(afilename4,"rb")
+                        f = open(mgfilename4,"rb")
                         playerListM = pickle.load(f)
                         f.close()
                 except:
                         playerListM = []
                 count = 0
-                amultiname = None
-                amultiname2 = None
-                amultiname3 = None
-                amultiname4 = None
-                amultinetname = None
-                amultinetname2 = None
-                amultinetname3 = None
-                amultinetname4 = None
+                mgmultiname = None
+                mgmultiname2 = None
+                mgmultiname3 = None
+                mgmultiname4 = None
+                mgmultinetname = None
+                mgmultinetname2 = None
+                mgmultinetname3 = None
+                mgmultinetname4 = None
                 for entry in playerListM:
                         count += 1
                         if count == 1:
-                                amultiname = entry[1]
-                                amultinetname = entry[3]
-                                amcheck = True
+                                mgmultiname = entry[1]
+                                mgmultinetname = entry[3]
+                                mgmcheck = True
                         if count == 2:
-                                amultiname2 = entry[1]
-                                amultinetname2 = entry[3]
+                                mgmultiname2 = entry[1]
+                                mgmultinetname2 = entry[3]
                         if count == 3:
-                                amultiname3 = entry[1]
-                                amultinetname3 = entry[3]
+                                mgmultiname3 = entry[1]
+                                mgmultinetname3 = entry[3]
                         if count == 4:
-                                amultiname4 = entry[1]
-                                amultinetname4 = entry[3]
-                if amcheck is False:
-                        irc.reply("No Players Logged in on AbandonedPlayBotMulti", private=True)
-                if amcheck is True:
-                        irc.reply("Abandoned PlayBot Multi", private=True)
+                                mgmultiname4 = entry[1]
+                                mgmultinetname4 = entry[3]
+                if mgmcheck is False:
+                        irc.reply("No Players Logged in on MultiGamePlayBotMulti", private=True)
+                if mgmcheck is True:
+                        irc.reply("MultiGame PlayBot Multi", private=True)
                         irc.reply(" ", private=True)
-                        irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(amultiname, amultinetname, amultiname2, amultinetname2), private=True)
-                        irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(amultiname3, amultinetname3, amultiname4, amultinetname4), private=True)
+                        irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
+                        irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
 
-    aplayerslist = wrap(aplayerslist, [("checkCapability", "admin")])
+    mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
 
     def multiread(self, irc):
         try:
@@ -1290,9 +1343,10 @@ class AbandonedPlayBot(callbacks.Plugin):
     def singlewrite(self, irc):
         global name
         global netname
+        global gameid
 
         playerListS = []
-        playerListS.append( ( "name", name, "netname", netname ) )
+        playerListS.append( ( "name", name, "netname", netname, "gameid", gameid ) )
         f = open(filename3,"wb")
         pickle.dump(playerListS,f)
         f.close()
@@ -1302,16 +1356,16 @@ class AbandonedPlayBot(callbacks.Plugin):
         f = open(filename3,"wb")
         pickle.dump(playerListS,f)
         f.close()
-        irc.reply("Abandoned PlayerListS Erased", private=True)
+        irc.reply("MultiGame PlayerListS Erased", private=True)
 
-    def asingleerase(self, irc, msg, args):
+    def mgsingleerase(self, irc, msg, args):
         """takes no arguments
 
         Erases playerList file
         """
         self.singleeraser(irc)
 
-    asingleerase = wrap(asingleerase, [("checkCapability", "admin")])
+    mgsingleerase = wrap(mgsingleerase, [("checkCapability", "admin")])
 
     def fixlooper(self, irc, msg, args):
         """takes no arguments
@@ -1466,7 +1520,7 @@ class AbandonedPlayBot(callbacks.Plugin):
             irc.reply("CreepAttack Mode Off        - setoption creepattack false", private=True)
             irc.reply("CreepAttack Mode On         - setoption creepattack true", private=True)
             irc.reply("Erase Config File           - eraseconfig", private=True)
-            irc.reply("Erase PlayerList            - asingleerase", private=True)
+            irc.reply("Erase PlayerList            - mgsingleerase", private=True)
             irc.reply("Error Text Mode Off         - setoption errortext false", private=True)
             irc.reply("Error Text Mode On          - setoption errortext true", private=True)
             irc.reply("Experince Buying Mode Off   - setoption expbuy false", private=True)
@@ -1487,7 +1541,7 @@ class AbandonedPlayBot(callbacks.Plugin):
             irc.reply("PlayBot Commands List       - help", private=True)
             irc.reply("Player's Items              - items", private=True)
             irc.reply("Player's Status             - status", private=True)
-            irc.reply("Players List                - aplayerslist", private=True)
+            irc.reply("Players List                - mgplayerslist", private=True)
             irc.reply("Set Creep Target            - setoption creep creepname", private=True)
             irc.reply("Set Goldsave                - setoption goldsave number", private=True)
             irc.reply("Set Item Buy Level          - setoption itembuy number", private=True)
@@ -1503,7 +1557,7 @@ class AbandonedPlayBot(callbacks.Plugin):
             irc.reply("XPUpgrade Mode Off          - setoption xpupgrade false", private=True)
             irc.reply("XPUpgrade Mode On           - setoption xpupgrade true", private=True)
             irc.reply(" ", private=True)
-            irc.reply("If you want more information about a command use <bot> help abandonedplaybot <command> - ie /msg DudeRuss help abandonedplaybot settings", private=True)
+            irc.reply("If you want more information about a command use <bot> help multigameplaybot <command> - ie /msg DudeRuss help multigameplaybot settings", private=True)
 
     help = wrap(help)
 
@@ -1530,6 +1584,7 @@ class AbandonedPlayBot(callbacks.Plugin):
             global townworkswitch
             global expbuy
             global goldsave
+            global netname
             global slaysum
             global bottextmode
             global errortextmode
@@ -1552,7 +1607,7 @@ class AbandonedPlayBot(callbacks.Plugin):
             irc.reply("Fighting Mode - {0}            GameBot PMs Mode - {1}".format(fightmode, pmtextmode), private=True)
             irc.reply("GetGems Mode - {0}             Goldsave - {1}".format(getgems, goldsave), private=True)
             irc.reply("Interval Text Mode - {0}       Item Buy Level - {1}".format(intervaltext, setbuy), private=True)
-            irc.reply("Player Character - {0}         Scrolls Buy ItemScore - {1}".format(name, scrollssum), private=True)
+            irc.reply("Player Character - {0}.  Network - {1}         Scrolls Buy ItemScore - {2}".format(name, netname, scrollssum), private=True)
             irc.reply("Set Creep Target - {0}         SlaySum Minimum - {1}".format(setcreeptarget, slaysum), private=True)
             irc.reply("XPSpend Upgrade Amount - {0}   XPUpgrade Mode - {1}".format(xpspend, xpupgrade), private=True)
 
@@ -2136,7 +2191,7 @@ class AbandonedPlayBot(callbacks.Plugin):
                         if var == "experience":
                                 xp = num
                         if var == "ffight":
-                                eatused = num
+                                eatused = int(num)
                         if var == "fightcount":
                                 fights = num
                         if var == "gems":
@@ -2256,17 +2311,17 @@ class AbandonedPlayBot(callbacks.Plugin):
 #            self.reply(irc, "atime {0}  stime {1}  ttl {2}".format(atime, stime, ttl))
             slaydisable = False
             
-            def lvlupgoas():
+            def lvlupgomgs():
                 self.lvlup(irc)
             
-            def attackgoas():
+            def attackgomgs():
                 self.attack(irc, 1)
-            def attackgobas():
+            def attackgobmgs():
                 self.attack(irc, 2)
 
-            def slaygoas():
+            def slaygomgs():
                 self.slay(irc, 1)
-            def slaygobas():
+            def slaygobmgs():
                 self.slay(irc, 2)
 
             if(ttl <= interval and ttl > 0):
@@ -2274,10 +2329,10 @@ class AbandonedPlayBot(callbacks.Plugin):
                     if bottextmode is True:
                             self.reply(irc, "{0} - Set lvlup timer. Going off in {1} minutes.".format(playbottext, ttl // 60))
                     try:
-                        schedule.addEvent(lvlupgoas, timer, "lvlupas")
+                        schedule.addEvent(lvlupgomgs, timer, "lvlupmgs")
                     except AssertionError:
-                        schedule.removeEvent('lvlupas')
-                        schedule.addEvent(lvlupgoas, timer, "lvlupas")                        
+                        schedule.removeEvent('lvlupmgs')
+                        schedule.addEvent(lvlupgomgs, timer, "lvlupmgs")                        
             if(level >= 15 and atime <= interval and atime <= ttl and life > 10):
                     if powerpots == 0 and gold >= 1100 and buypower is True:
                         self.usecommand(irc, "buy power")
@@ -2291,17 +2346,17 @@ class AbandonedPlayBot(callbacks.Plugin):
 
                     if powerpots == 0:
                             try:
-                                schedule.addEvent(attackgoas, timer, "attackas")
+                                schedule.addEvent(attackgomgs, timer, "attackmgs")
                             except AssertionError:
-                                schedule.removeEvent('attackas')
-                                schedule.addEvent(attackgoas, timer, "attackas")                        
+                                schedule.removeEvent('attackmgs')
+                                schedule.addEvent(attackgomgs, timer, "attackmgs")                        
                     if powerpots == 1:
                             powerpots = 0
                             try:
-                                schedule.addEvent(attackgobas, timer, "attackas")
+                                schedule.addEvent(attackgobmgs, timer, "attackmgs")
                             except AssertionError:
-                                schedule.removeEvent('attackas')
-                                schedule.addEvent(attackgobas, timer, "attackas")                        
+                                schedule.removeEvent('attackmgs')
+                                schedule.addEvent(attackgobmgs, timer, "attackmgs")                        
 
             if(level >= 30 and attackslaySum >= 1000 and stime <= interval and stime <= ttl and slaydisable is False and life > 10):
                     if(mana == 0 and gold >= 1100 and attackslaySum < 6300000):
@@ -2313,19 +2368,19 @@ class AbandonedPlayBot(callbacks.Plugin):
                             if bottextmode is True:
                                     self.reply(irc, "{0} - Set slay timer. Going off in {1} minutes.".format(playbottext, stime // 60))
                             try:
-                                schedule.addEvent(slaygoas, timer, "slayas")
+                                schedule.addEvent(slaygomgs, timer, "slaymgs")
                             except AssertionError:
-                                schedule.removeEvent('slayas')
-                                schedule.addEvent(slaygoas, timer, "slayas")
+                                schedule.removeEvent('slaymgs')
+                                schedule.addEvent(slaygomgs, timer, "slaymgs")
                     if mana == 1:
                             if bottextmode is True:
                                     self.reply(irc, "{0} - Set slay timer. Going off in {1} minutes.".format(playbottext, stime // 60))
                             mana = 0
                             try:
-                                schedule.addEvent(slaygobas, timer, "slayas")
+                                schedule.addEvent(slaygobmgs, timer, "slaymgs")
                             except AssertionError:
-                                schedule.removeEvent('slayas')
-                                schedule.addEvent(slaygobas, timer, "slayas")
+                                schedule.removeEvent('slaymgs')
+                                schedule.addEvent(slaygobmgs, timer, "slaymgs")
 
     def expertcalc(self, item):
         expertcalcsum = 0
@@ -2651,9 +2706,9 @@ class AbandonedPlayBot(callbacks.Plugin):
             interval = 60
             self.looper(irc)
 
-            def attackgoas():
+            def attackgomgs():
                     self.attack(irc, 1)
-            def attackgobas():
+            def attackgobmgs():
                     self.attack(irc, 2)
 
             if(level >= 16 and life > 10):
@@ -2664,17 +2719,17 @@ class AbandonedPlayBot(callbacks.Plugin):
 
                     if powerpots == 0:
                             try:
-                                    schedule.addEvent(attackgoas, 0, "attackas")
+                                    schedule.addEvent(attackgomgs, 0, "attackmgs")
                             except AssertionError:
-                                    schedule.removeEvent('attackas')
-                                    schedule.addEvent(attackgoas, 0, "attackas")                        
+                                    schedule.removeEvent('attackmgs')
+                                    schedule.addEvent(attackgomgs, 0, "attackmgs")                        
                     if powerpots == 1:
                             powerpots = 0
                             try:
-                                    schedule.addEvent(attackgobas, 0, "attackas")
+                                    schedule.addEvent(attackgobmgs, 0, "attackmgs")
                             except AssertionError:
-                                    schedule.removeEvent('attackas')
-                                    schedule.addEvent(attackgobas, 0, "attackas")                        
+                                    schedule.removeEvent('attackmgs')
+                                    schedule.addEvent(attackgobmgs, 0, "attackmgs")                        
 
     def fight_fight(self, irc):
             global name
@@ -3096,6 +3151,7 @@ class AbandonedPlayBot(callbacks.Plugin):
                                                 rank = int(ranktext[0])
                                         except:
                                                 rank = 0
+
         if(webworks is True and online == 0 and botcheck is True):
                 if errortextmode is True:
                         self.reply(irc, "{0} - Player Offline".format(playbottext))
@@ -3163,7 +3219,7 @@ class AbandonedPlayBot(callbacks.Plugin):
         global intervaltext
         global playbottext
         
-        def loopas():
+        def loopmgs():
             self.main(irc)
         nextTime = time.time() + interval
         
@@ -3171,13 +3227,13 @@ class AbandonedPlayBot(callbacks.Plugin):
                 self.reply(irc, "{0} - Checking timers every {1} minutes".format(playbottext, interval // 60))
         if gameactive is True:
             try:
-                schedule.addEvent(loopas, nextTime, "loopas")
+                schedule.addEvent(loopmgs, nextTime, "loopmgs")
             except AssertionError:
-                schedule.removeEvent('loopas')
-                schedule.addEvent(loopas, nextTime, "loopas")        
+                schedule.removeEvent('loopmgs')
+                schedule.addEvent(loopmgs, nextTime, "loopmgs")        
 
     def __init__(self, irc):
-        self.__parent = super(AbandonedPlayBot, self)
+        self.__parent = super(MultiGamePlayBot, self)
         self.__parent.__init__(irc)
 
         if autostartmode is True:
@@ -3186,11 +3242,11 @@ class AbandonedPlayBot(callbacks.Plugin):
     def die(self):
         self.__parent.die()
         try:
-                schedule.removeEvent('loopas')
+                schedule.removeEvent('loopmgs')
         except:
                 return
 
-Class = AbandonedPlayBot
+Class = MultiGamePlayBot
 
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:

@@ -12,17 +12,22 @@ Obviously replacing the supybot with the name of your supybot plugin with the na
 Do not use this plugin on a Limnoria bot you use for other things as it will change your settings.
 
 PlayBotSingle and PlayBotMulti are PlayBots for the IRC game MultiRPG https://multirpg.net/  
+
 The different version are:  
 Single - Single player.  
 Multi - Up to 5 players.  
 
-AbandonedPlayBot and AbandonedPlayBotMulti are PlayBots for IdleRPG game on Abandoned-Irc #zw-idlerpg.
+
+MultiGamePlayBot and MultiGamePlayBotMulti are PlayBots for IdleRPG games on
+Abandoned-Irc #zw-idlerpg, Irc-Nerds #idlerpg and TwistedNet #idlerpg.
  
 The different version are:  
 Single - Single player.  
 Multi - Up to 4 players.  
 
+
 QuakenetPlayBot and QuakeNetPlayBotMulti are PlayBots for IdleRPG game on QuakeNet #idlerpg  
+
 The different version are:  
 Single - Single player.  
 Multi - Up to 4 players.

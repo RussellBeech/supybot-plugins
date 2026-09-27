@@ -18,8 +18,8 @@ Buy Power Potion Mode On    	- setoption buypower true
 CreepAttack Mode Off        	- setoption creepattack false  
 CreepAttack Mode On         	- setoption creepattack true  
 Erase Config File           	- eraseconfig  
-Erase PlayerList            	- asingleerase  
-Erase PlayerList            	- amultierase  
+Erase PlayerList            	- mgsingleerase  
+Erase PlayerList            	- mgmultierase  
 Error Text Mode Off             - setoption errortext false
 Error Text Mode On              - setoption errortext true
 Experince Buying Mode Off   	- setoption expbuy false  
@@ -44,7 +44,7 @@ Manual Command Char4        	- cmd4 command        - (Multi Only)
 PlayBot Commands List       	- help  
 Player's Items              	- items  
 Player's Status             	- status  
-Players List                	- aplayerslist  
+Players List                	- mgplayerslist  
 Set Creep Target            	- setoption creep creepname  
 Set Goldsave                	- setoption goldsave number  
 Set Item Buy Level          	- setoption itembuy number  
@@ -61,4 +61,4 @@ Version Checker             	- versioncheck
 XPUpgrade Mode Off          	- setoption xpupgrade false  
 XPUpgrade Mode On           	- setoption xpupgrade true  
 
-If you want more information about a command use <bot> help <plugin name> <command> - ie /msg DudeRuss help abandonedplaybot settings
+If you want more information about a command use <bot> help <plugin name> <command> - ie /msg DudeRuss help multigameplaybot settings
