@@ -24,8 +24,8 @@ Abandoned-Irc #zw-idlerpg, Irc-Nerds #idlerpg and TwistedNet #idlerpg.
  
 The different version are:  
 Single - Single player.  
-Multi - Up to 4 players.  
-
+Multi - Up to 4 players on 1 game.
+MultiMulti - up to 4 players over multiple games.
 
 QuakenetPlayBot and QuakeNetPlayBotMulti are PlayBots for IdleRPG game on QuakeNet #idlerpg. 
 

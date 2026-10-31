@@ -68,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "MultiGame IdleRPG Playbot Script"
-__module_version__ = "2.2"
+__module_version__ = "2.3"
 __module_description__ = "MultiGame IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -171,6 +171,7 @@ expbuy = False
 autoconfig = 1 # 0 = off, 1 = on, 2 = remove config changes.
 slaysum = 1000 # minimum sum you start slaying without mana from
 loginsettingslist = True # True = on, False = off - Settings List at start
+disablemgplayerslistcommand = False # True = on, False = off - You can disable the mgplayerslist command if there are multiple of them when running single, multi and multimulti together
 
 # declare stats as global
 channame = None
@@ -251,6 +252,7 @@ pbcount = 0
 
 multigame = False
 multigamemulti = False
+multigamemultimulti = False
 
 fileprefix = "MultiGamePlayBotconfig.txt"
 path = conf.supybot.directories.data
@@ -276,6 +278,9 @@ filename3 = path.dirize(fileprefix3)
 fileprefix4 = "multigamemultiplayers.txt"
 path = conf.supybot.directories.data
 filename4 = path.dirize(fileprefix4)
+fileprefix5 = "multigamemultimultiplayers.txt"
+path = conf.supybot.directories.data
+filename5 = path.dirize(fileprefix5)
 
 for entry in configList:
         if(entry[0] == "autostartmode"):
@@ -799,6 +804,7 @@ class MultiGamePlayBot(callbacks.Plugin):
         global pbcount
         global multigame
         global multigamemulti
+        global multigamemultimulti
 
         playbotcount = 0
         pbcount = 0
@@ -806,12 +812,14 @@ class MultiGamePlayBot(callbacks.Plugin):
         quakemultion = True
         multigameon = True
         multigamemultion = True
+        multigamemultimultion = True
         playbotsingleon = True
         playbotmultion = True
         quake = False
         quakemulti = False
         multigame = False
         multigamemulti = False
+        multigamemultimulti = False
         playbotsingle = False
         playbotmulti = False
         
@@ -831,6 +839,10 @@ class MultiGamePlayBot(callbacks.Plugin):
                 multigamemulticheck = conf.supybot.plugins.get("MultiGamePlayBotMulti")
         except:
                 multigamemultion = False
+        try:
+                multigamemultimulticheck = conf.supybot.plugins.get("MultiGamePlayBotMultiMulti")
+        except:
+                multigamemultimultion = False
         try:
                 playbotsinglecheck = conf.supybot.plugins.get("PlayBotSingle")
         except:
@@ -862,6 +874,11 @@ class MultiGamePlayBot(callbacks.Plugin):
                         playbotcount += 1
                         pbcount += 1
 
+        if multigamemultimultion is True:
+                multigamemultimulti = conf.supybot.plugins.MultiGamePlayBotMultiMulti()       
+                if multigamemultimulti is True:
+                        playbotcount += 1
+                        pbcount += 1
         if playbotsingleon is True:
                 playbotsingle = conf.supybot.plugins.PlayBotSingle()       
                 if playbotsingle is True:
@@ -979,6 +996,9 @@ class MultiGamePlayBot(callbacks.Plugin):
 
         charcount += 1
 
+        netlist = []
+        for entry in gamelist:
+                netlist.append( ( entry[0] ) )
         if charcount == 1:
                 netcheck = False
                 gameactive = True
@@ -987,7 +1007,6 @@ class MultiGamePlayBot(callbacks.Plugin):
                 supynick = irc.nick
                 otherIrc = self._getIrc(netname)
                 namecheck = False
-                netlist = []
 
                 for entry in gamelist:
                         if entry[0] in netname.lower():
@@ -998,19 +1017,13 @@ class MultiGamePlayBot(callbacks.Plugin):
                                 netcheck = True
 
                 if netcheck is False:
-                        for entry in gamelist:
-                                netlist.append( ( entry[0] ) )
                         irc.error("Networks supported: {0}".format(netlist))
                         irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname))
                         charcount = 0
-
-                if charcount == 1:
                         if "undernet" in netname.lower():
                                 irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                                charcount = 0
                         if "quakenet" in netname.lower():
                                 irc.error("You need to use the QuakeNet version of PlayBot")
-                                charcount = 0
 
                 if charcount == 1:
                         self.playbotcheck(irc)
@@ -1087,6 +1100,54 @@ class MultiGamePlayBot(callbacks.Plugin):
                                         charcount = 0
                                 if(netname == multinetname4):
                                         irc.error("Character {0} is already logged in on MultiGamePlayBotMulti".format(multiname4))
+                                        charcount = 0
+                        if pbcount >= 2:
+                                multimultiplayerlist = self.multimultiread(irc)
+                                count = 0
+                                multimultiname = None
+                                multimultiname2 = None
+                                multimultiname3 = None
+                                multimultiname4 = None
+                                multimultinetname = None
+                                multimultinetname2 = None
+                                multimultinetname3 = None
+                                multimultinetname4 = None
+                                multimultigameid = 0
+                                multimultigameid2 = 0
+                                multimultigameid3 = 0
+                                multimultigameid4 = 0
+                                for entry in multimultiplayerlist:
+                                        count += 1
+                                        if count == 1:
+                                                multimultiname = entry[1]
+                                                multimultinetname = entry[3]
+                                                multimultigameid = entry[5]
+                                        if count == 2:
+                                                multimultiname2 = entry[1]
+                                                multimultinetname2 = entry[3]
+                                                multimultigameid2 = entry[5]
+                                        if count == 3:
+                                                multimultiname3 = entry[1]
+                                                multimultinetname3 = entry[3]
+                                                multimultigameid3 = entry[5]
+                                        if count == 4:
+                                                multimultiname4 = entry[1]
+                                                multimultinetname4 = entry[3]
+                                                multimultigameid4 = entry[5]
+                                if((name == multimultiname and gameid == multimultigameid) or (name == multimultiname2 and gameid == multimultigameid2) or (name == multimultiname3 and gameid == multimultigameid3) or (name == multimultiname4 and gameid == multimultigameid4)):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name))
+                                        charcount = 0
+                                if(netname == multimultinetname):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
+                                        charcount = 0
+                                if(netname == multimultinetname2):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
+                                        charcount = 0
+                                if(netname == multimultinetname3):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
+                                        charcount = 0
+                                if(netname == multimultinetname4):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
                                         charcount = 0
 
                 if charcount == 0:
@@ -1249,87 +1310,145 @@ class MultiGamePlayBot(callbacks.Plugin):
 
     logoutgame = wrap(logoutgame, [("checkCapability", "admin")])
 
-    def mgplayerslist(self, irc, msg, args):
-        """takes no arguments
+    if disablemgplayerslistcommand is False:
+            def mgplayerslist(self, irc, msg, args):
+                """takes no arguments
 
-        Lists players on all MultiGame plugins loaded
-        """
+                Lists players on all MultiGame plugins loaded
+                """
 
-        global multigame
-        global multigamemulti
+                global multigame
+                global multigamemulti
+                global multigamemultimulti
 
-        self.playbotcheck(irc)
-       
-        if multigame is True:
-                mgfileprefix3 = "multigamesingleplayers.txt"
-                path = conf.supybot.directories.data
-                mgfilename3 = path.dirize(mgfileprefix3)
-                mgcheck = True
-                try:
-                        f = open(mgfilename3,"rb")
-                        playerListS = pickle.load(f)
-                        f.close()
-                except:
-                        playerListS = []
-                try:
-                        mgsinglename = playerListS[0][1]
-                        mgsinglenetname = playerListS[0][3]
-                except IndexError:
-                        irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
-                        mgcheck = False
-                if mgcheck is True:
-                        irc.reply("MultiGame PlayBot Single", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character - {0}.  Network {1}".format(mgsinglename, mgsinglenetname), private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply(" ", private=True)
+                self.playbotcheck(irc)
+               
+                if multigame is True:
+                        mgfileprefix3 = "multigamesingleplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename3 = path.dirize(mgfileprefix3)
+                        mgcheck = True
+                        try:
+                                f = open(mgfilename3,"rb")
+                                playerListS = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListS = []
+                        try:
+                                mgsinglename = playerListS[0][1]
+                                mgsinglenetname = playerListS[0][3]
+                        except IndexError:
+                                irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
+                                mgcheck = False
+                        if mgcheck is True:
+                                irc.reply("MultiGame PlayBot Single", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character - {0}.  Network {1}".format(mgsinglename, mgsinglenetname), private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
 
-        if multigamemulti is True:
-                mgfileprefix4 = "multigamemultiplayers.txt"
-                path = conf.supybot.directories.data
-                mgfilename4 = path.dirize(mgfileprefix4)
-                mgmcheck = False
-                try:
-                        f = open(mgfilename4,"rb")
-                        playerListM = pickle.load(f)
-                        f.close()
-                except:
-                        playerListM = []
-                count = 0
-                mgmultiname = None
-                mgmultiname2 = None
-                mgmultiname3 = None
-                mgmultiname4 = None
-                mgmultinetname = None
-                mgmultinetname2 = None
-                mgmultinetname3 = None
-                mgmultinetname4 = None
-                for entry in playerListM:
-                        count += 1
-                        if count == 1:
-                                mgmultiname = entry[1]
-                                mgmultinetname = entry[3]
-                                mgmcheck = True
-                        if count == 2:
-                                mgmultiname2 = entry[1]
-                                mgmultinetname2 = entry[3]
-                        if count == 3:
-                                mgmultiname3 = entry[1]
-                                mgmultinetname3 = entry[3]
-                        if count == 4:
-                                mgmultiname4 = entry[1]
-                                mgmultinetname4 = entry[3]
-                if mgmcheck is False:
-                        irc.reply("No Players Logged in on MultiGamePlayBotMulti", private=True)
-                if mgmcheck is True:
-                        irc.reply("MultiGame PlayBot Multi", private=True)
-                        irc.reply(" ", private=True)
-                        irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
-                        irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
+                if multigamemulti is True:
+                        mgfileprefix4 = "multigamemultiplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename4 = path.dirize(mgfileprefix4)
+                        mgmcheck = False
+                        try:
+                                f = open(mgfilename4,"rb")
+                                playerListM = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListM = []
+                        count = 0
+                        mgmultiname = None
+                        mgmultiname2 = None
+                        mgmultiname3 = None
+                        mgmultiname4 = None
+                        mgmultinetname = None
+                        mgmultinetname2 = None
+                        mgmultinetname3 = None
+                        mgmultinetname4 = None
+                        for entry in playerListM:
+                                count += 1
+                                if count == 1:
+                                        mgmultiname = entry[1]
+                                        mgmultinetname = entry[3]
+                                        mgmcheck = True
+                                if count == 2:
+                                        mgmultiname2 = entry[1]
+                                        mgmultinetname2 = entry[3]
+                                if count == 3:
+                                        mgmultiname3 = entry[1]
+                                        mgmultinetname3 = entry[3]
+                                if count == 4:
+                                        mgmultiname4 = entry[1]
+                                        mgmultinetname4 = entry[3]
+                        if mgmcheck is False:
+                                irc.reply("No Players Logged in on MultiGamePlayBotMulti", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
+                        if mgmcheck is True:
+                                irc.reply("MultiGame PlayBot Multi", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
 
-    mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
+                if multigamemultimulti is True:
+                        mgfileprefix5 = "multigamemultimultiplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename5 = path.dirize(mgfileprefix5)
+                        mgmmcheck = False
+                        try:
+                                f = open(mgfilename5,"rb")
+                                playerListMM = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListMM = []
+                        count = 0
+                        mgmultimultiname = None
+                        mgmultimultiname2 = None
+                        mgmultimultiname3 = None
+                        mgmultimultiname4 = None
+                        mgmultimultinetname = None
+                        mgmultimultinetname2 = None
+                        mgmultimultinetname3 = None
+                        mgmultimultinetname4 = None
+                        for entry in playerListMM:
+                                count += 1
+                                if count == 1:
+                                        mgmultimultiname = entry[1]
+                                        mgmultimultinetname = entry[3]
+                                        mgmmcheck = True
+                                if count == 2:
+                                        mgmultimultiname2 = entry[1]
+                                        mgmultimultinetname2 = entry[3]
+                                if count == 3:
+                                        mgmultimultiname3 = entry[1]
+                                        mgmultimultinetname3 = entry[3]
+                                if count == 4:
+                                        mgmultimultiname4 = entry[1]
+                                        mgmultimultinetname4 = entry[3]
+                        if mgmmcheck is False:
+                                irc.reply("No Players Logged in on MultiGamePlayBotMultiMulti", private=True)
+                        if mgmmcheck is True:
+                                irc.reply("MultiGame PlayBot MultiMulti", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultimultiname, mgmultimultinetname, mgmultimultiname2, mgmultimultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultimultiname3, mgmultimultinetname3, mgmultimultiname4, mgmultimultinetname4), private=True)
+
+            mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
+
+    def multimultiread(self, irc):
+        try:
+                f = open(filename5,"rb")
+                playerListMM = pickle.load(f)
+                f.close()
+        except:
+                playerListMM = []
+        return playerListMM
 
     def multiread(self, irc):
         try:

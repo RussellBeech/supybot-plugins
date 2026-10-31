@@ -68,7 +68,7 @@ except ImportError:
     _ = lambda x: x
 
 __module_name__ = "MultiGame #IdleRPG Playbot Script"
-__module_version__ = "2.2"
+__module_version__ = "2.3"
 __module_description__ = "MultiGame IdleRPG Playbot Script"
 
 # build hardcoded monster/creep lists, reverse
@@ -319,6 +319,7 @@ pbcount = 0
 
 multigame = False
 multigamemulti = False
+multigamemultimulti = False
 
 fileprefix = "MultiGamePlayBotMulticonfig.txt"
 path = conf.supybot.directories.data
@@ -344,6 +345,9 @@ filename3 = path.dirize(fileprefix3)
 fileprefix4 = "multigamemultiplayers.txt"
 path = conf.supybot.directories.data
 filename4 = path.dirize(fileprefix4)
+fileprefix5 = "multigamemultimultiplayers.txt"
+path = conf.supybot.directories.data
+filename5 = path.dirize(fileprefix5)
 
 for entry in configList:
         if(entry[0] == "autostartmode"):
@@ -1069,6 +1073,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         global pbcount
         global multigame
         global multigamemulti
+        global multigamemultimulti
 
         playbotcount = 0
         pbcount = 0
@@ -1076,12 +1081,14 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
         quakemultion = True
         multigameon = True
         multigamemultion = True
+        multigamemultimultion = True
         playbotsingleon = True
         playbotmultion = True
         quake = False
         quakemulti = False
         multigame = False
         multigamemulti = False
+        multigamemultimulti = False
         playbotsingle = False
         playbotmulti = False
         
@@ -1101,6 +1108,10 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                 multigamemulticheck = conf.supybot.plugins.get("MultiGamePlayBotMulti")
         except:
                 multigamemultion = False
+        try:
+                multigamemultimulticheck = conf.supybot.plugins.get("MultiGamePlayBotMultiMulti")
+        except:
+                multigamemultimultion = False
         try:
                 playbotsinglecheck = conf.supybot.plugins.get("PlayBotSingle")
         except:
@@ -1132,6 +1143,11 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         playbotcount += 1
                         pbcount += 1
 
+        if multigamemultimultion is True:
+                multigamemultimulti = conf.supybot.plugins.MultiGamePlayBotMultiMulti()       
+                if multigamemultimulti is True:
+                        playbotcount += 1
+                        pbcount += 1
         if playbotsingleon is True:
                 playbotsingle = conf.supybot.plugins.PlayBotSingle()       
                 if playbotsingle is True:
@@ -1469,14 +1485,10 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         irc.error("Networks supported: {0}".format(netlist))
                         irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname))
                         charcount = 0
-
-                if charcount == 1:
                         if "undernet" in netname.lower():
                                 irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                                charcount = 0
                         if "quakenet" in netname.lower():
                                 irc.error("You need to use the QuakeNet version of PlayBot")
-                                charcount = 0
 
                 if charcount == 1:
                         self.playbotcheck(irc)
@@ -1520,6 +1532,54 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                 charcount = 0
                                 except IndexError:
                                         irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                        if pbcount >= 2:
+                                multimultiplayerlist = self.multimultiread(irc)
+                                count = 0
+                                multimultiname = None
+                                multimultiname2 = None
+                                multimultiname3 = None
+                                multimultiname4 = None
+                                multimultinetname = None
+                                multimultinetname2 = None
+                                multimultinetname3 = None
+                                multimultinetname4 = None
+                                multimultigameid = 0
+                                multimultigameid2 = 0
+                                multimultigameid3 = 0
+                                multimultigameid4 = 0
+                                for entry in multimultiplayerlist:
+                                        count += 1
+                                        if count == 1:
+                                                multimultiname = entry[1]
+                                                multimultinetname = entry[3]
+                                                multimultigameid = entry[5]
+                                        if count == 2:
+                                                multimultiname2 = entry[1]
+                                                multimultinetname2 = entry[3]
+                                                multimultigameid2 = entry[5]
+                                        if count == 3:
+                                                multimultiname3 = entry[1]
+                                                multimultinetname3 = entry[3]
+                                                multimultigameid3 = entry[5]
+                                        if count == 4:
+                                                multimultiname4 = entry[1]
+                                                multimultinetname4 = entry[3]
+                                                multimultigameid4 = entry[5]
+                                if((name == multimultiname and gameid == multimultigameid) or (name == multimultiname2 and gameid == multimultigameid2) or (name == multimultiname3 and gameid == multimultigameid3) or (name == multimultiname4 and gameid == multimultigameid4)):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name))
+                                        charcount = 0
+                                if(netname == multimultinetname):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
+                                        charcount = 0
+                                if(netname == multimultinetname2):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
+                                        charcount = 0
+                                if(netname == multimultinetname3):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
+                                        charcount = 0
+                                if(netname == multimultinetname4):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
+                                        charcount = 0
                 if charcount == 0:
                         gameactive = False
                         name = None
@@ -1550,17 +1610,14 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         irc.error("Networks supported: {0}".format(netlist))
                         irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname2))
                         charcount = 1
+                        if "undernet" in netname2:
+                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                        if "quakenet" in netname2.lower():
+                                irc.error("You need to use the QuakeNet version of PlayBot")
+
                 if netcheck is True:
                         if gameid2 != gameid:
                                 irc.error("You can only use multiple players on {0}".format(networkname))
-                                charcount = 1
-
-                if charcount == 2:
-                        if "undernet" in netname2:
-                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                                charcount = 1
-                        if "quakenet" in netname2.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
                                 charcount = 1
 
                 if charcount == 2:
@@ -1604,6 +1661,54 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                 charcount = 1
                                 except IndexError:
                                         irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                        if pbcount >= 2:
+                                multimultiplayerlist = self.multimultiread(irc)
+                                count = 0
+                                multimultiname = None
+                                multimultiname2 = None
+                                multimultiname3 = None
+                                multimultiname4 = None
+                                multimultinetname = None
+                                multimultinetname2 = None
+                                multimultinetname3 = None
+                                multimultinetname4 = None
+                                multimultigameid = 0
+                                multimultigameid2 = 0
+                                multimultigameid3 = 0
+                                multimultigameid4 = 0
+                                for entry in multimultiplayerlist:
+                                        count += 1
+                                        if count == 1:
+                                                multimultiname = entry[1]
+                                                multimultinetname = entry[3]
+                                                multimultigameid = entry[5]
+                                        if count == 2:
+                                                multimultiname2 = entry[1]
+                                                multimultinetname2 = entry[3]
+                                                multimultigameid2 = entry[5]
+                                        if count == 3:
+                                                multimultiname3 = entry[1]
+                                                multimultinetname3 = entry[3]
+                                                multimultigameid3 = entry[5]
+                                        if count == 4:
+                                                multimultiname4 = entry[1]
+                                                multimultinetname4 = entry[3]
+                                                multimultigameid4 = entry[5]
+                                if((name2 == multimultiname and gameid2 == multimultigameid) or (name2 == multimultiname2 and gameid2 == multimultigameid2) or (name2 == multimultiname3 and gameid2 == multimultigameid3) or (name2 == multimultiname4 and gameid2 == multimultigameid4)):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name2))
+                                        charcount = 1
+                                if(netname2 == multimultinetname):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
+                                        charcount = 1
+                                if(netname2 == multimultinetname2):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
+                                        charcount = 1
+                                if(netname2 == multimultinetname3):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
+                                        charcount = 1
+                                if(netname2 == multimultinetname4):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
+                                        charcount = 1
                 if charcount == 2:
                         if(supynick2 == supynick):
                                 charcount = 1
@@ -1645,17 +1750,14 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         irc.error("Networks supported: {0}".format(netlist))
                         irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname3))
                         charcount = 2
+                        if "undernet" in netname3.lower():
+                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                        if "quakenet" in netname3.lower():
+                                irc.error("You need to use the QuakeNet version of PlayBot")
+
                 if netcheck is True:
                         if gameid3 != gameid:
                                 irc.error("You can only use multiple players on {0}".format(networkname))
-                                charcount = 2
-
-                if charcount == 3:
-                        if "undernet" in netname3.lower():
-                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                                charcount = 2
-                        if "quakenet" in netname3.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
                                 charcount = 2
 
                 if charcount == 3:
@@ -1699,6 +1801,54 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                 charcount = 2
                                 except IndexError:
                                         irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                        if pbcount >= 2:
+                                multimultiplayerlist = self.multimultiread(irc)
+                                count = 0
+                                multimultiname = None
+                                multimultiname2 = None
+                                multimultiname3 = None
+                                multimultiname4 = None
+                                multimultinetname = None
+                                multimultinetname2 = None
+                                multimultinetname3 = None
+                                multimultinetname4 = None
+                                multimultigameid = 0
+                                multimultigameid2 = 0
+                                multimultigameid3 = 0
+                                multimultigameid4 = 0
+                                for entry in multimultiplayerlist:
+                                        count += 1
+                                        if count == 1:
+                                                multimultiname = entry[1]
+                                                multimultinetname = entry[3]
+                                                multimultigameid = entry[5]
+                                        if count == 2:
+                                                multimultiname2 = entry[1]
+                                                multimultinetname2 = entry[3]
+                                                multimultigameid2 = entry[5]
+                                        if count == 3:
+                                                multimultiname3 = entry[1]
+                                                multimultinetname3 = entry[3]
+                                                multimultigameid3 = entry[5]
+                                        if count == 4:
+                                                multimultiname4 = entry[1]
+                                                multimultinetname4 = entry[3]
+                                                multimultigameid4 = entry[5]
+                                if((name3 == multimultiname and gameid3 == multimultigameid) or (name3 == multimultiname2 and gameid3 == multimultigameid2) or (name3 == multimultiname3 and gameid3 == multimultigameid3) or (name3 == multimultiname4 and gameid3 == multimultigameid4)):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name3))
+                                        charcount = 2
+                                if(netname3 == multimultinetname):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
+                                        charcount = 2
+                                if(netname3 == multimultinetname2):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
+                                        charcount = 2
+                                if(netname3 == multimultinetname3):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
+                                        charcount = 2
+                                if(netname3 == multimultinetname4):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
+                                        charcount = 2
                 if charcount == 3:
                         if(supynick3 != supynick and name3 != name and supynick3 != supynick2 and name3 != name2):
                                 char3 = True
@@ -1739,17 +1889,14 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         irc.error("Networks supported: {0}".format(netlist))
                         irc.error("Current Network: {0}.  The network name needs to have one of the above names in it".format(netname4))
                         charcount = 3
+                        if "undernet" in netname4.lower():
+                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
+                        if "quakenet" in netname4.lower():
+                                irc.error("You need to use the QuakeNet version of PlayBot")
+
                 if netcheck is True:
                         if gameid4 != gameid:
                                 irc.error("You can only use multiple players on {0}".format(networkname))
-                                charcount = 3
-
-                if charcount == 4:
-                        if "undernet" in netname4.lower():
-                                irc.error("The #irpg game on Undernet is not supported.  Expect your head to explode if you continue")
-                                charcount = 3
-                        if "quakenet" in netname4.lower():
-                                irc.error("You need to use the QuakeNet version of PlayBot")
                                 charcount = 3
 
                 if charcount == 4:
@@ -1793,6 +1940,54 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                                 charcount = 3
                                 except IndexError:
                                         irc.reply("No Players Logged in on MultiGamePlayBot", private=True)
+                        if pbcount >= 2:
+                                multimultiplayerlist = self.multimultiread(irc)
+                                count = 0
+                                multimultiname = None
+                                multimultiname2 = None
+                                multimultiname3 = None
+                                multimultiname4 = None
+                                multimultinetname = None
+                                multimultinetname2 = None
+                                multimultinetname3 = None
+                                multimultinetname4 = None
+                                multimultigameid = 0
+                                multimultigameid2 = 0
+                                multimultigameid3 = 0
+                                multimultigameid4 = 0
+                                for entry in multimultiplayerlist:
+                                        count += 1
+                                        if count == 1:
+                                                multimultiname = entry[1]
+                                                multimultinetname = entry[3]
+                                                multimultigameid = entry[5]
+                                        if count == 2:
+                                                multimultiname2 = entry[1]
+                                                multimultinetname2 = entry[3]
+                                                multimultigameid2 = entry[5]
+                                        if count == 3:
+                                                multimultiname3 = entry[1]
+                                                multimultinetname3 = entry[3]
+                                                multimultigameid3 = entry[5]
+                                        if count == 4:
+                                                multimultiname4 = entry[1]
+                                                multimultinetname4 = entry[3]
+                                                multimultigameid4 = entry[5]
+                                if((name4 == multimultiname and gameid4 == multimultigameid) or (name4 == multimultiname2 and gameid4 == multimultigameid2) or (name4 == multimultiname3 and gameid4 == multimultigameid3) or (name4 == multimultiname4 and gameid4 == multimultigameid4)):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(name4))
+                                        charcount = 3
+                                if(netname4 == multimultinetname):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname))
+                                        charcount = 3
+                                if(netname4 == multimultinetname2):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname2))
+                                        charcount = 3
+                                if(netname4 == multimultinetname3):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname3))
+                                        charcount = 3
+                                if(netname4 == multimultinetname4):
+                                        irc.error("Character {0} is already logged in on MultiGamePlayBotMultiMulti".format(multimultiname4))
+                                        charcount = 3
                 if charcount == 4:
                         if(supynick4 != supynick and name4 != name and supynick4 != supynick2 and name4 != name2 and supynick4 != supynick3 and name4 != name3):
                                 char4 = True
@@ -2017,6 +2212,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
 
                 global multigame
                 global multigamemulti
+                global multigamemultimulti
 
                 self.playbotcheck(irc)
                 
@@ -2088,8 +2284,62 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                                 irc.reply(" ", private=True)
                                 irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultiname, mgmultinetname, mgmultiname2, mgmultinetname2), private=True)
                                 irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultiname3, mgmultinetname3, mgmultiname4, mgmultinetname4), private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply(" ", private=True)
   
+                if multigamemultimulti is True:
+                        mgfileprefix5 = "multigamemultimultiplayers.txt"
+                        path = conf.supybot.directories.data
+                        mgfilename5 = path.dirize(mgfileprefix5)
+                        mgmmcheck = False
+                        try:
+                                f = open(mgfilename5,"rb")
+                                playerListMM = pickle.load(f)
+                                f.close()
+                        except:
+                                playerListMM = []
+                        count = 0
+                        mgmultimultiname = None
+                        mgmultimultiname2 = None
+                        mgmultimultiname3 = None
+                        mgmultimultiname4 = None
+                        mgmultimultinetname = None
+                        mgmultimultinetname2 = None
+                        mgmultimultinetname3 = None
+                        mgmultimultinetname4 = None
+                        for entry in playerListMM:
+                                count += 1
+                                if count == 1:
+                                        mgmultimultiname = entry[1]
+                                        mgmultimultinetname = entry[3]
+                                        mgmmcheck = True
+                                if count == 2:
+                                        mgmultimultiname2 = entry[1]
+                                        mgmultimultinetname2 = entry[3]
+                                if count == 3:
+                                        mgmultimultiname3 = entry[1]
+                                        mgmultimultinetname3 = entry[3]
+                                if count == 4:
+                                        mgmultimultiname4 = entry[1]
+                                        mgmultimultinetname4 = entry[3]
+                        if mgmmcheck is False:
+                                irc.reply("No Players Logged in on MultiGamePlayBotMultiMulti", private=True)
+                        if mgmmcheck is True:
+                                irc.reply("MultiGame PlayBot MultiMulti", private=True)
+                                irc.reply(" ", private=True)
+                                irc.reply("Player Character 1 - {0}.  Network {1}    Player Character 2 - {2}.  Network {3}".format(mgmultimultiname, mgmultimultinetname, mgmultimultiname2, mgmultimultinetname2), private=True)
+                                irc.reply("Player Character 3 - {0}.  Network {1}    Player Character 4 - {2}.  Network {3}".format(mgmultimultiname3, mgmultimultinetname3, mgmultimultiname4, mgmultimultinetname4), private=True)
+
             mgplayerslist = wrap(mgplayerslist, [("checkCapability", "admin")])
+
+    def multimultiread(self, irc):
+        try:
+                f = open(filename5,"rb")
+                playerListMM = pickle.load(f)
+                f.close()
+        except:
+                playerListMM = []
+        return playerListMM
 
     def singleread(self, irc):
         try:
@@ -5207,7 +5457,7 @@ class MultiGamePlayBotMulti(callbacks.Plugin):
                         for entry in itemslists:
                                 if(entry[0] == name):
                                         ttl = entry[5]
-                        if online is True:
+                        if online == 1:
                                 if ttl == oldttl:
                                         if errortextmode is True:
                                                 self.replymulti(irc, "{0} - TTL Frozen".format(playbottext))
