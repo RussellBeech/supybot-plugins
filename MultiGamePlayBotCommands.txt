@@ -20,6 +20,7 @@ CreepAttack Mode On         	- setoption creepattack true
 Erase Config File           	- eraseconfig  
 Erase PlayerList            	- mgsingleerase  
 Erase PlayerList            	- mgmultierase  
+Erase PlayerList            	- mgmultimultierase  
 Error Text Mode Off             - setoption errortext false
 Error Text Mode On              - setoption errortext true
 Experince Buying Mode Off   	- setoption expbuy false  
@@ -36,11 +37,11 @@ Interval Text Mode On       	- setoption intervaltext true
 Log In Char                 	- login charname password  
 Log Out Char                	- logoutchar  
 Log Out Game                	- logoutgame          - (Single Only)  
-Log Out Game                	- logoutgame charnum  - (Multi Only)  
+Log Out Game                	- logoutgame charnum  - (Multi & MultiMulti Only)  
 Manual Command Char1        	- cmd command  
-Manual Command Char2        	- cmd2 command        - (Multi Only)  
-Manual Command Char3        	- cmd3 command        - (Multi Only)  
-Manual Command Char4        	- cmd4 command        - (Multi Only)  
+Manual Command Char2        	- cmd2 command        - (Multi & MultiMulti Only)  
+Manual Command Char3        	- cmd3 command        - (Multi & MultiMulti Only)  
+Manual Command Char4        	- cmd4 command        - (Multi & MultiMulti Only)  
 PlayBot Commands List       	- help  
 Player's Items              	- items  
 Player's Status             	- status  
@@ -56,7 +57,7 @@ Settings List               	- settings
 Town/Forest Switch Mode     	- setoption townforest true  
 Town/Work Switch Mode       	- setoption townwork true  
 Update Nick                 	- updatenick            - (Single Only)  
-Update Nick                 	- updatenick charnum    - (Multi Only)  
+Update Nick                 	- updatenick charnum    - (Multi & MultiMulti Only)  
 Version Checker             	- versioncheck  
 XPUpgrade Mode Off          	- setoption xpupgrade false  
 XPUpgrade Mode On           	- setoption xpupgrade true  
